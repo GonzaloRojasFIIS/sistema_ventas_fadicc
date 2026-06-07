@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS clientes (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 3. PRODUCTOS (con campo categoría)
+-- 3. PRODUCTOS (con campo categoría e imagen)
 CREATE TABLE IF NOT EXISTS productos (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     sku VARCHAR(50) UNIQUE NOT NULL,
@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS productos (
     precio_base NUMERIC(10, 2) NOT NULL,
     stock_actual INT DEFAULT 0 CHECK (stock_actual >= 0),
     stock_minimo INT DEFAULT 5,
+    imagen TEXT,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -159,16 +160,16 @@ INSERT INTO clientes (tipo_documento, numero_documento, razon_social_o_nombre, t
 ('RUC', '20456123789', 'Restaurantes Sabor S.A.C.',     '01-555-6789', 'logistica@sabor.com.pe',     'Av. La Marina 2250, San Miguel')
 ON CONFLICT (numero_documento) DO NOTHING;
 
--- Productos (con categoría)
-INSERT INTO productos (sku, nombre, descripcion, categoria, precio_base, stock_actual, stock_minimo) VALUES
-('COC-IND-04', 'Cocina Industrial 4 Hornillas',      'Acero inoxidable 304, alta presión, quemadores de hierro fundido',        'Industrial',  1250.00, 8,  3),
-('COC-IND-06', 'Cocina Industrial 6 Hornillas',      'Con horno convector integrado, acero inoxidable, ideal restaurantes',     'Industrial',  1890.00, 4,  2),
-('COC-IND-08', 'Cocina Industrial 8 Hornillas',      'Modelo profesional doble-cuerpo, para cocinas de gran volumen',          'Industrial',  2850.00, 2,  2),
-('COC-COM-04', 'Cocina Semi-Industrial 4 Hornillas', 'Diseño compacto para uso comercial ligero o doméstico exigente',         'Comercial',    750.00, 12, 5),
-('COC-DOM-04', 'Cocina Doméstica Premium 4 Hornillas','Gas, encendido eléctrico, tapa de vidrio templado, rejillas de hierro', 'Doméstico',    450.00, 2,  5),
-('HOR-IND-01', 'Horno Convector Industrial',         'Capacidad 10 bandejas 60x40, control digital de temperatura',            'Industrial',  3400.00, 0,  1),
-('HOR-COM-01', 'Horno Mixto Comercial',              'Gas/eléctrico, 6 bandejas, ideal panaderías y pastelerías medianas',     'Comercial',   1890.00, 3,  2),
-('ACC-PLA-01', 'Plancha Industrial Lisa',             'Acero grueso 10mm, doble quemador, mango antitérmico',                  'Accesorios',   890.00, 6,  3)
+-- Productos (con categoría e imagen)
+INSERT INTO productos (sku, nombre, descripcion, categoria, precio_base, stock_actual, stock_minimo, imagen) VALUES
+('COC-IND-04', 'Cocina Industrial 4 Hornillas',      'Acero inoxidable 304, alta presión, quemadores de hierro fundido',        'Industrial',  1250.00, 8,  3, '/cocinas/Cocina-de-4-horno-mesa-y-pie.png'),
+('COC-IND-06', 'Cocina Industrial 6 Hornillas',      'Con horno convector integrado, acero inoxidable, ideal restaurantes',     'Industrial',  1890.00, 4,  2, '/cocinas/De-3-hornias.png'),
+('COC-IND-08', 'Cocina Industrial 8 Hornillas',      'Modelo profesional doble-cuerpo, para cocinas de gran volumen',          'Industrial',  2850.00, 2,  2, '/cocinas/De-4-hornias.png'),
+('COC-COM-04', 'Cocina Semi-Industrial 4 Hornillas', 'Diseño compacto para uso comercial ligero o doméstico exigente',         'Comercial',    750.00, 12, 5, '/cocinas/Cocina-de-2-horno-mesa-y-pie.png'),
+('COC-DOM-04', 'Cocina Doméstica Premium 4 Hornillas','Gas, encendido eléctrico, tapa de vidrio templado, rejillas de hierro', 'Doméstico',    450.00, 2,  5, '/cocinas/Cocinas-22in.png'),
+('HOR-IND-01', 'Horno Convector Industrial',         'Capacidad 10 bandejas 60x40, control digital de temperatura',            'Industrial',  3400.00, 0,  1, '/cocinas/Horno-Acero.png'),
+('HOR-COM-01', 'Horno Mixto Comercial',              'Gas/eléctrico, 6 bandejas, ideal panaderías y pastelerías medianas',     'Comercial',   1890.00, 3,  2, '/cocinas/Chiferos-y-Fogones.png'),
+('ACC-PLA-01', 'Plancha Industrial Lisa',             'Acero grueso 10mm, doble quemador, mango antitérmico',                  'Accesorios',   890.00, 6,  3, '/cocinas/Cocina-de-1-horno-mesa-y-pie.png')
 ON CONFLICT (sku) DO NOTHING;
 
 -- Proforma de prueba (PENDIENTE)
