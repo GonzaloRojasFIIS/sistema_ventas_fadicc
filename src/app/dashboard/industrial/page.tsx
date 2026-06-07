@@ -409,7 +409,7 @@ function DetailDrawer({
     setEmailStatus(null);
     try {
       const result = await enviarProformaEmail({
-        to: 'gonzalo.rojas.c@uni.pe',
+        to: proforma.cliente_email || 'gonzalo.rojas.c@uni.pe',
         proformaCodigo: proforma.codigo_proforma,
         clienteNombre: proforma.cliente_nombre || 'Cliente',
         representanteNombre: proforma.representante_nombre || 'Representante',

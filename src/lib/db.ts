@@ -123,6 +123,7 @@ export interface Proforma {
   id: string;
   cliente_id: string;
   cliente_nombre?: string;
+  cliente_email?: string;
   representante_id: string;
   representante_nombre?: string;
   codigo_proforma: string;
