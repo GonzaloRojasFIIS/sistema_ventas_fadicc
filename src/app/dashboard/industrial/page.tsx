@@ -465,7 +465,7 @@ function DetailDrawer({
           </div>
           <div className="flex items-center gap-2 text-sm text-slate-600">
             <Phone className="w-4 h-4 text-slate-400" />
-            01-444-5555
+            +51 912 449 977
           </div>
           <div className="flex items-center gap-2 text-sm text-slate-600">
             <Mail className="w-4 h-4 text-slate-400" />

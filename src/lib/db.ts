@@ -306,9 +306,9 @@ const INITIAL_PRODUCTS: Producto[] = [
 ];
 
 const INITIAL_CLIENTS: Cliente[] = [
-  { id: 'c1', tipo_documento: 'DNI', numero_documento: '44556677', razon_social_o_nombre: 'Juan Pérez', telefono: '999888777', email: 'juan.perez@email.com', direccion: 'Av. Arequipa 1234, Lince' },
-  { id: 'c2', tipo_documento: 'RUC', numero_documento: '20123456789', razon_social_o_nombre: 'Constructora Horizonte S.A.C.', telefono: '01-444-5555', email: 'compras@horizonte.pe', direccion: 'Av. Javier Prado Este 505, San Isidro' },
-  { id: 'c3', tipo_documento: 'RUC', numero_documento: '20987654321', razon_social_o_nombre: 'Hoteles del Perú S.A.', telefono: '01-333-2222', email: 'contacto@hotelesperu.com', direccion: 'Calle Larco 789, Miraflores' },
+  { id: 'c1', tipo_documento: 'DNI', numero_documento: '44556677', razon_social_o_nombre: 'Juan Pérez', telefono: '912449977', email: 'juan.perez@email.com', direccion: 'Av. Arequipa 1234, Lince' },
+  { id: 'c2', tipo_documento: 'RUC', numero_documento: '20123456789', razon_social_o_nombre: 'Constructora Horizonte S.A.C.', telefono: '+51 912 449 977', email: 'compras@horizonte.pe', direccion: 'Av. Javier Prado Este 505, San Isidro' },
+  { id: 'c3', tipo_documento: 'RUC', numero_documento: '20987654321', razon_social_o_nombre: 'Hoteles del Perú S.A.', telefono: '+51 912 449 977', email: 'contacto@hotelesperu.com', direccion: 'Calle Larco 789, Miraflores' },
   { id: 'c4', tipo_documento: 'RUC', numero_documento: '20548796321', razon_social_o_nombre: 'Restaurantes La Cuesta E.I.R.L.', telefono: '01-222-1111', email: 'admin@lacuesta.pe', direccion: 'Jr. de la Unión 340, Cercado de Lima' },
   { id: 'c5', tipo_documento: 'DNI', numero_documento: '47896532', razon_social_o_nombre: 'María Gonzales', telefono: '987654321', email: 'maria.g@gmail.com', direccion: 'Av. Brasil 890, Pueblo Libre' },
   { id: 'c6', tipo_documento: 'RUC', numero_documento: '20112233445', razon_social_o_nombre: 'Inmobiliaria del Norte S.A.C.', telefono: '01-555-7777', email: 'ventas@delnorte.pe', direccion: 'Av. Panamericana Norte Km 12, Los Olivos' },
@@ -556,9 +556,9 @@ export const dbService = {
       if (!error && data) return data;
     }
     return getLocalData<Empresa[]>('fadicc_empresas', [
-      { id: 'e1', ruc: '20123456789', razon_social: 'Constructora Horizonte S.A.C.', telefono: '01-444-5555', email: 'compras@horizonte.pe', direccion: 'Av. Javier Prado Este 505, San Isidro' },
-      { id: 'e2', ruc: '20987654321', razon_social: 'Hoteles del Perú S.A.', telefono: '01-333-2222', email: 'contacto@hotelesperu.com', direccion: 'Calle Larco 789, Miraflores' },
-      { id: 'e3', ruc: '20456123789', razon_social: 'Restaurantes Sabor S.A.C.', telefono: '01-555-6789', email: 'logistica@sabor.com.pe', direccion: 'Av. La Marina 2250, San Miguel' },
+      { id: 'e1', ruc: '20123456789', razon_social: 'Constructora Horizonte S.A.C.', telefono: '+51 912 449 977', email: 'compras@horizonte.pe', direccion: 'Av. Javier Prado Este 505, San Isidro' },
+      { id: 'e2', ruc: '20987654321', razon_social: 'Hoteles del Perú S.A.', telefono: '+51 912 449 977', email: 'contacto@hotelesperu.com', direccion: 'Calle Larco 789, Miraflores' },
+      { id: 'e3', ruc: '20456123789', razon_social: 'Restaurantes Sabor S.A.C.', telefono: '+51 912 449 977', email: 'logistica@sabor.com.pe', direccion: 'Av. La Marina 2250, San Miguel' },
     ]);
   },
 
@@ -1202,8 +1202,8 @@ export const dbService = {
   // --- PROVEEDORES ---
   async getProveedores(): Promise<Proveedor[]> {
     return getLocalData<Proveedor[]>('fadicc_proveedores', [
-      { id: 'prov1', ruc: '20123456789', razon_social: 'Insumos Metálicos del Perú S.A.C.', contacto: 'Jorge Díaz', telefono: '01-444-5555', rubro: 'Materia Prima' },
-      { id: 'prov2', ruc: '20987654321', razon_social: 'Hornos Industriales del Norte E.I.R.L.', contacto: 'Sofía López', telefono: '01-333-2222', rubro: 'Equipos y Repuestos' },
+      { id: 'prov1', ruc: '20123456789', razon_social: 'Insumos Metálicos del Perú S.A.C.', contacto: 'Jorge Díaz', telefono: '+51 912 449 977', rubro: 'Materia Prima' },
+      { id: 'prov2', ruc: '20987654321', razon_social: 'Hornos Industriales del Norte E.I.R.L.', contacto: 'Sofía López', telefono: '+51 912 449 977', rubro: 'Equipos y Repuestos' },
       { id: 'prov3', ruc: '20548796321', razon_social: 'Distribuidora Nacional S.A.', contacto: 'Roberto Quispe', telefono: '01-222-1111', rubro: 'Distribución y Logística' },
     ]);
   },

@@ -1123,7 +1123,7 @@ export default function CanalComercialPage() {
             </div>
             <div>
               <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Teléfono</label>
-              <GlassInput type="text" value={nuevaPersonaForm.telefono} onChange={(e) => setNuevaPersonaForm((f) => ({ ...f, telefono: e.target.value }))} placeholder="Ej. 999888777" className="mt-1.5" iconLeft={<PhoneIcon size={14} />} />
+              <GlassInput type="text" value={nuevaPersonaForm.telefono} onChange={(e) => setNuevaPersonaForm((f) => ({ ...f, telefono: e.target.value }))} placeholder="Ej. 912449977" className="mt-1.5" iconLeft={<PhoneIcon size={14} />} />
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <GradientButton variant="secondary" size="sm" onClick={() => setShowNuevoClienteModal(false)}>Cancelar</GradientButton>
@@ -1144,7 +1144,7 @@ export default function CanalComercialPage() {
               </div>
               <div>
                 <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Teléfono empresa</label>
-                <GlassInput type="text" value={nuevaEmpresaForm.telefono} onChange={(e) => setNuevaEmpresaForm((f) => ({ ...f, telefono: e.target.value }))} placeholder="Ej. 01-444-5555" className="mt-1.5" />
+                <GlassInput type="text" value={nuevaEmpresaForm.telefono} onChange={(e) => setNuevaEmpresaForm((f) => ({ ...f, telefono: e.target.value }))} placeholder="Ej. +51 912 449 977" className="mt-1.5" />
               </div>
               <div>
                 <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Email empresa</label>
@@ -1172,7 +1172,7 @@ export default function CanalComercialPage() {
               </div>
               <div>
                 <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Teléfono del contacto</label>
-                <GlassInput type="text" value={nuevoContactoForm.telefono} onChange={(e) => setNuevoContactoForm((f) => ({ ...f, telefono: e.target.value }))} placeholder="Ej. 999888777" className="mt-1.5" iconLeft={<PhoneIcon size={14} />} />
+                <GlassInput type="text" value={nuevoContactoForm.telefono} onChange={(e) => setNuevoContactoForm((f) => ({ ...f, telefono: e.target.value }))} placeholder="Ej. 912449977" className="mt-1.5" iconLeft={<PhoneIcon size={14} />} />
               </div>
               <div>
                 <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Email del contacto</label>

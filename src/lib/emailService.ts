@@ -71,7 +71,7 @@ export async function enviarProformaEmail({
             <strong>FADICC S.A.</strong><br>
             Av. Javier Prado Este 505, San Isidro<br>
             Lima, Perú<br>
-            Tel: 01-444-5555
+            Tel: +51 912 449 977
           </p>
         </div>
       </div>
@@ -139,7 +139,7 @@ export async function enviarCatalogoEmail({
             <strong>FADICC S.A.</strong><br>
             Av. Javier Prado Este 505, San Isidro<br>
             Lima, Perú<br>
-            Tel: 01-444-5555
+            Tel: +51 912 449 977
           </p>
         </div>
       </div>
