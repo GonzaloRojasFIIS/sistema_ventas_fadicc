@@ -47,6 +47,7 @@ const ESTADOS = [
   'PENDIENTE',
   'EN_NEGOCIACION',
   'APROBADA',
+  'DESPACHADA',
   'RECHAZADA',
   'EXPIRADA',
 ] as const;
@@ -57,7 +58,7 @@ const ESTADO_CONFIG: Record<
   EstadoProforma,
   {
     label: string;
-    badge: 'warning' | 'info' | 'success' | 'danger' | 'neutral';
+    badge: 'warning' | 'info' | 'success' | 'danger' | 'neutral' | 'violet';
     accent: string;
   }
 > = {
@@ -75,6 +76,11 @@ const ESTADO_CONFIG: Record<
     label: 'Aprobadas',
     badge: 'success',
     accent: 'from-emerald-500 to-teal-400',
+  },
+  DESPACHADA: {
+    label: 'Despachadas',
+    badge: 'violet',
+    accent: 'from-violet-500 to-purple-400',
   },
   RECHAZADA: {
     label: 'Rechazadas',
@@ -175,7 +181,7 @@ function KanbanCard({
 }) {
   const [popover, setPopover] = useState<{
     open: boolean;
-    action: 'APROBADA' | 'RECHAZADA' | 'EN_NEGOCIACION' | 'convert' | null;
+    action: 'APROBADA' | 'RECHAZADA' | 'EN_NEGOCIACION' | 'DESPACHADA' | 'convert' | null;
   }>({ open: false, action: null });
 
   const remaining = daysUntil(proforma.fecha_vencimiento);
@@ -200,10 +206,40 @@ function KanbanCard({
 
     if (estado === 'APROBADA') {
       return (
-        <div className="flex gap-2 pt-3 border-t border-slate-100">
-          <button className="text-xs text-blue-600 hover:text-blue-700 font-medium underline decoration-blue-300 underline-offset-2">
+        <div className="flex flex-wrap gap-2 pt-3 border-t border-slate-100">
+          <button
+            onClick={(e) => { e.stopPropagation(); onSelect(proforma); }}
+            className="text-xs text-blue-600 hover:text-blue-700 font-medium underline decoration-blue-300 underline-offset-2"
+          >
             Ver Orden {proforma.codigo_proforma}
           </button>
+          <GradientButton
+            variant="secondary"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              setPopover({ open: true, action: 'DESPACHADA' as any });
+            }}
+          >
+            Marcar Despachada
+          </GradientButton>
+          <ConfirmPopover
+            open={popover.open && popover.action === 'DESPACHADA'}
+            label="¿Confirmar que fue despachada?"
+            onConfirm={handleConfirm}
+            onCancel={closePopover}
+          />
+        </div>
+      );
+    }
+
+    if (estado === 'DESPACHADA') {
+      return (
+        <div className="flex gap-2 pt-3 border-t border-slate-100">
+          <span className="text-xs text-violet-600 font-medium flex items-center gap-1">
+            <Check className="w-3.5 h-3.5" />
+            Despachado por Almacén
+          </span>
         </div>
       );
     }
@@ -510,9 +546,6 @@ function DetailDrawer({
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
           PDF
-        </GradientButton>
-        <GradientButton variant="ghost" size="sm" onClick={onClose}>
-          Cerrar
         </GradientButton>
       </div>
     </GradientDrawer>

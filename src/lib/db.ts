@@ -102,7 +102,7 @@ export interface Proforma {
   representante_id: string;
   representante_nombre?: string;
   codigo_proforma: string;
-  estado: 'PENDIENTE' | 'EN_NEGOCIACION' | 'APROBADA' | 'RECHAZADA' | 'EXPIRADA';
+  estado: 'PENDIENTE' | 'EN_NEGOCIACION' | 'APROBADA' | 'DESPACHADA' | 'RECHAZADA' | 'EXPIRADA';
   fecha_emision: string;
   fecha_vencimiento: string;
   total: number;
@@ -689,7 +689,7 @@ export const dbService = {
     if (supabase) {
       const { data, error } = await supabase
         .from('proformas')
-        .select(`*, clientes(razon_social_o_nombre), usuarios!proformas_representante_id_fkey(nombre)`)
+        .select(`*, clientes(razon_social_o_nombre), usuarios!proformas_representante_id_fkey(nombre), proforma_detalles(*, productos(nombre, sku))`)
         .order('fecha_emision', { ascending: false });
 
       if (!error && data) {
@@ -697,6 +697,14 @@ export const dbService = {
           ...p,
           cliente_nombre: p.clientes?.razon_social_o_nombre || 'Cliente',
           representante_nombre: p.usuarios?.nombre || 'Representante',
+          detalles: p.proforma_detalles ? p.proforma_detalles.map((d: any) => ({
+            producto_id: d.producto_id,
+            nombre: d.productos?.nombre || 'Producto',
+            sku: d.productos?.sku || '',
+            cantidad: d.cantidad,
+            precio_pactado: d.precio_pactado,
+            subtotal: d.subtotal,
+          })) : [],
         }));
       }
     }
@@ -788,6 +796,34 @@ export const dbService = {
     const updated = profs.map(p => p.id === id ? { ...p, estado: nuevoEstado } : p);
     setLocalData('fadicc_proformas', updated);
     return true;
+  },
+
+  async getProformaById(id: string): Promise<Proforma | null> {
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('proformas')
+        .select(`*, clientes(razon_social_o_nombre), usuarios!proformas_representante_id_fkey(nombre), proforma_detalles(*, productos(nombre, sku))`)
+        .eq('id', id)
+        .single();
+
+      if (!error && data) {
+        return {
+          ...data,
+          cliente_nombre: data.clientes?.razon_social_o_nombre || 'Cliente',
+          representante_nombre: data.usuarios?.nombre || 'Representante',
+          detalles: data.proforma_detalles ? data.proforma_detalles.map((d: any) => ({
+            producto_id: d.producto_id,
+            nombre: d.productos?.nombre || 'Producto',
+            sku: d.productos?.sku || '',
+            cantidad: d.cantidad,
+            precio_pactado: d.precio_pactado,
+            subtotal: d.subtotal,
+          })) : [],
+        };
+      }
+    }
+    const profs = getLocalData<Proforma[]>('fadicc_proformas', []);
+    return profs.find(p => p.id === id) || null;
   },
 
   // --- ÓRDENES DE PEDIDO ---
@@ -1021,13 +1057,12 @@ export const dbService = {
   },
 
   async getVendedoresPerformance(): Promise<VendedorPerformance[]> {
-    const metas = await this.getMetasConfig();
     return [
-      { nombre: 'Carlos Vendedor', meta: metas.vendedor, real: 42300, porcentaje: metas.vendedor > 0 ? Math.round((42300 / metas.vendedor) * 1000) / 10 : 0 },
-      { nombre: 'Ana Representante', meta: metas.representante, real: 61200, porcentaje: metas.representante > 0 ? Math.round((61200 / metas.representante) * 1000) / 10 : 0 },
+      { nombre: 'Carlos Vendedor', meta: 0, real: 42300, porcentaje: 0 },
+      { nombre: 'Ana Representante', meta: 0, real: 61200, porcentaje: 0 },
       { nombre: 'Luis Almacenero', meta: 0, real: 0, porcentaje: 0 },
       { nombre: 'Marta Producción', meta: 0, real: 0, porcentaje: 0 },
-    ].filter(v => v.meta > 0);
+    ];
   },
 
   // --- METAS CONFIG ---
@@ -1057,11 +1092,6 @@ export const dbService = {
   },
 
   // --- PROFORMAS EXTRA ---
-  async getProformaById(id: string): Promise<Proforma | null> {
-    const profs = await this.getProformas();
-    return profs.find(p => p.id === id) || null;
-  },
-
   async getProformasVencidas(): Promise<Proforma[]> {
     const profs = await this.getProformas();
     const now = new Date().toISOString();

@@ -93,6 +93,74 @@ export default function CanalComercialPage() {
   const [shakeItemId, setShakeItemId] = useState<string | null>(null);
   const [categoria, setCategoria] = useState<string>('Todos');
   const [isLoading, setIsLoading] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+
+  // Refs for keyboard shortcuts
+  const productSearchRef = useRef<HTMLInputElement>(null);
+  const clientSearchRef = useRef<HTMLInputElement>(null);
+
+  // --- Keyboard shortcuts ---
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      // Don't trigger when typing in inputs/modals (except specific shortcuts)
+      const target = e.target as HTMLElement;
+      const isTyping = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
+
+      if (e.key === '?') {
+        e.preventDefault();
+        setShowShortcuts(prev => !prev);
+      }
+      if (e.key === 'F1' || e.key === '/') {
+        e.preventDefault();
+        productSearchRef.current?.focus();
+        setShowClientResults(false);
+      }
+      if (e.key === 'F2') {
+        e.preventDefault();
+        clientSearchRef.current?.focus();
+        setShowClientResults(true);
+      }
+      if (e.key === 'F3' && cart.length > 0 && cajaActiva) {
+        e.preventDefault();
+        // Trigger payment: scroll to payment section or focus it
+        const payBtn = document.getElementById('btn-procesar-pago');
+        payBtn?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        payBtn?.focus();
+      }
+      if (e.key === 'Escape') {
+        if (showVentaDetailModal) {
+          setShowVentaDetailModal(null);
+        } else if (showNuevoClienteModal) {
+          setShowNuevoClienteModal(false);
+        } else if (showCierreModal) {
+          setShowCierreModal(false);
+        } else if (showClientResults) {
+          setShowClientResults(false);
+        }
+      }
+      if (e.key === '+' && !isTyping) {
+        e.preventDefault();
+        setCart(prev => {
+          if (prev.length === 0) return prev;
+          const last = prev[prev.length - 1];
+          return prev.map((item, i) =>
+            i === prev.length - 1 ? { ...item, cantidad: item.cantidad + 1 } : item
+          );
+        });
+      }
+      if (e.key === '-' && !isTyping) {
+        e.preventDefault();
+        setCart(prev => {
+          if (prev.length === 0) return prev;
+          return prev.map((item, i) =>
+            i === prev.length - 1 ? { ...item, cantidad: Math.max(1, item.cantidad - 1) } : item
+          );
+        });
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [cart.length, cajaActiva, showVentaDetailModal, showNuevoClienteModal, showCierreModal, showClientResults, showShortcuts]);
 
   // --- New client form ---
   const [nuevoClienteForm, setNuevoClienteForm] = useState({
@@ -529,13 +597,19 @@ export default function CanalComercialPage() {
           {/* Buscador + Filtros */}
           <GradientCard className="p-5">
             <div className="space-y-4">
-              <GlassInput
-                type="text"
-                placeholder="Buscar por nombre o SKU..."
-                value={productSearch}
-                onChange={(e) => setProductSearch(e.target.value)}
-                iconLeft={<SearchIcon size={18} />}
-              />
+              <div className="relative">
+                <GlassInput
+                  ref={productSearchRef}
+                  type="text"
+                  placeholder="Buscar por nombre o SKU..."
+                  value={productSearch}
+                  onChange={(e) => setProductSearch(e.target.value)}
+                  iconLeft={<SearchIcon size={18} />}
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                  F1
+                </span>
+              </div>
 
               {/* Categorías */}
               <div className="flex items-center gap-2 overflow-x-auto pb-1">
@@ -661,28 +735,19 @@ export default function CanalComercialPage() {
                   const totalVentas = misVentas.reduce((s, v) => s + v.total, 0);
                   const countVentas = misVentas.length;
                   const ticketPromedio = countVentas > 0 ? totalVentas / countVentas : 0;
-                  const meta = usuario.rol === 'REPRESENTANTE' ? 8000 : 5000;
-                  const porcentaje = Math.min((totalVentas / meta) * 100, 100);
                   return (
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
                           Mi rendimiento hoy
                         </span>
-                        <StatusBadge variant={porcentaje >= 100 ? 'success' : porcentaje >= 50 ? 'warning' : 'info'} className="text-[10px] py-0 px-1.5">
-                          {porcentaje.toFixed(1)}%
+                        <StatusBadge variant="info" className="text-[10px] py-0 px-1.5">
+                          Acumulado
                         </StatusBadge>
                       </div>
                       <div className="flex items-baseline gap-1.5">
                         <span className="text-xs font-semibold text-slate-500">S/</span>
                         <span className="text-xl font-extrabold font-mono text-slate-800">{totalVentas.toFixed(2)}</span>
-                        <span className="text-[10px] text-slate-400 font-medium">/ S/ {meta.toLocaleString('es-PE')}</span>
-                      </div>
-                      <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden border border-slate-200/60">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-orange-500 to-amber-400"
-                          style={{ width: `${porcentaje}%` }}
-                        />
                       </div>
                       <div className="flex items-center justify-between text-[10px] text-slate-500">
                         <span className="font-semibold">{countVentas} venta{countVentas !== 1 ? 's' : ''}</span>
@@ -756,6 +821,7 @@ export default function CanalComercialPage() {
                           <div className="flex gap-2">
                             <div className="relative flex-1">
                               <GlassInput
+                                ref={clientSearchRef}
                                 type="text"
                                 placeholder="Buscar por nombre, DNI o RUC..."
                                 value={clientSearch}
@@ -766,6 +832,9 @@ export default function CanalComercialPage() {
                                 onFocus={() => setShowClientResults(clientSearch.trim().length > 0)}
                                 className="text-xs"
                               />
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                                F2
+                              </span>
                               {clientSearch && (
                                 <button
                                   onClick={() => {
@@ -932,15 +1001,21 @@ export default function CanalComercialPage() {
                       </div>
                     </div>
 
-                    <GradientButton
-                      variant="primary"
-                      size="lg"
-                      className="w-full"
-                      disabled={!canConfirm}
-                      onClick={handleConfirmarVenta}
-                    >
-                      <CheckIcon size={18} /> Confirmar y Emitir Pago
-                    </GradientButton>
+                    <div className="relative">
+                      <GradientButton
+                        id="btn-procesar-pago"
+                        variant="primary"
+                        size="lg"
+                        className="w-full"
+                        disabled={!canConfirm}
+                        onClick={handleConfirmarVenta}
+                      >
+                        <CheckIcon size={18} /> Confirmar y Emitir Pago
+                      </GradientButton>
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-white/70 bg-white/10 px-1.5 py-0.5 rounded border border-white/20">
+                        F3
+                      </span>
+                    </div>
                     {!canConfirm && (
                       <p className="text-[10px] text-center text-slate-400">
                         {!cajaActiva
@@ -1312,6 +1387,57 @@ export default function CanalComercialPage() {
           </div>
         )}
       </GradientModal>
+
+      {/* Teclado rápido — panel flotante */}
+      {showShortcuts && (
+        <div className="fixed bottom-6 right-6 z-40 w-72 bg-white/95 backdrop-blur-sm rounded-xl border border-slate-200 shadow-xl p-4 space-y-3 animate-fade-in-up">
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-bold text-slate-800">Atajos de teclado</h4>
+            <button onClick={() => setShowShortcuts(false)} className="text-slate-400 hover:text-slate-600">
+              <CloseIcon size={16} />
+            </button>
+          </div>
+          <div className="space-y-2 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-slate-600">Buscar producto</span>
+              <span className="font-mono font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">F1</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-slate-600">Buscar cliente</span>
+              <span className="font-mono font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">F2</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-slate-600">Confirmar pago</span>
+              <span className="font-mono font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">F3</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-slate-600">+1 unidad (último item)</span>
+              <span className="font-mono font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">+</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-slate-600">-1 unidad (último item)</span>
+              <span className="font-mono font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">-</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-slate-600">Cerrar modal / limpiar</span>
+              <span className="font-mono font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">Esc</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-slate-600">Mostrar / ocultar ayuda</span>
+              <span className="font-mono font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">?</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Botón flotante para abrir atajos */}
+      <button
+        onClick={() => setShowShortcuts(true)}
+        className="fixed bottom-6 right-6 z-30 w-10 h-10 bg-white/90 backdrop-blur-sm border border-slate-200 rounded-full shadow-lg flex items-center justify-center text-slate-500 hover:text-orange-600 hover:border-orange-300 transition-all"
+        title="Atajos de teclado (?)"
+      >
+        <span className="text-sm font-bold">?</span>
+      </button>
     </div>
   );
 }
