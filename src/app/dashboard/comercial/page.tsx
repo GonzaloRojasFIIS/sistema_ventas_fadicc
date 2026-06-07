@@ -421,7 +421,10 @@ export default function CanalComercialPage() {
     );
   }, [debouncedProductSearch, productos]);
 
-  const categorias = ['Todos', 'Industrial', 'Comercial', 'Doméstico'];
+  const categorias = useMemo(() => {
+    const cats = Array.from(new Set(productos.map((p) => p.categoria).filter((c): c is string => !!c)));
+    return ['Todos', ...cats];
+  }, [productos]);
 
   const canConfirm = cajaActiva && selectedCliente && cart.length > 0;
 
