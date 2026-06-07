@@ -894,8 +894,8 @@ export default function CanalComercialPage() {
                 </div>
               ) : (
                 /* ==================== HISTORIAL ==================== */
-                <div className="flex-1 flex flex-col overflow-hidden">
-                  <div className="flex justify-between items-center text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-3">
+                <div className="flex-1 flex flex-col overflow-hidden space-y-3">
+                  <div className="flex justify-between items-center text-[10px] uppercase font-bold text-slate-500 tracking-wider">
                     <span>Transacciones Recientes</span>
                     <span className="text-slate-400">{ventasDelTurno.length} ventas</span>
                   </div>
@@ -906,55 +906,50 @@ export default function CanalComercialPage() {
                       <p className="font-semibold text-xs">No se registran ventas en este turno.</p>
                     </div>
                   ) : (
-                    <div className="overflow-auto flex-1 pr-1">
-                      <table className="w-full text-xs">
-                        <thead className="sticky top-0 bg-white z-10">
-                          <tr className="border-b border-slate-200 text-[10px] uppercase text-slate-400 tracking-wider">
-                            <th className="text-left py-2 font-semibold">Hora</th>
-                            <th className="text-left py-2 font-semibold">Tipo</th>
-                            <th className="text-left py-2 font-semibold">N° Doc</th>
-                            <th className="text-left py-2 font-semibold">Cliente</th>
-                            <th className="text-right py-2 font-semibold">Total</th>
-                            <th className="text-right py-2 font-semibold">Acción</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {ventasDelTurno.map((v) => (
-                            <tr key={v.id} className="hover:bg-slate-50/50 transition-colors">
-                              <td className="py-2 font-mono text-slate-600">
-                                <div className="flex items-center gap-1">
-                                  <ClockIcon size={12} />
-                                  {formatTimePe(v.fecha_venta)}
-                                </div>
-                              </td>
-                              <td className="py-2">
+                    <div className="overflow-auto flex-1 pr-1 space-y-3">
+                      {ventasDelTurno.map((v) => (
+                        <div
+                          key={v.id}
+                          className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                          onClick={() => setShowVentaDetailModal(v)}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 mb-1.5">
                                 <span
-                                  className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${
+                                  className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
                                     v.tipo_comprobante === 'BOLETA'
                                       ? 'bg-blue-50 text-blue-700 border-blue-200'
                                       : 'bg-violet-50 text-violet-700 border-violet-200'
                                   }`}
                                 >
-                                  {v.tipo_comprobante === 'BOLETA' ? 'BOL' : 'FAC'}
+                                  {v.tipo_comprobante === 'BOLETA' ? 'BOLETA' : 'FACTURA'}
                                 </span>
-                              </td>
-                              <td className="py-2 font-mono font-semibold text-slate-700">{v.numero_comprobante}</td>
-                              <td className="py-2 text-slate-700 truncate max-w-[120px]">{v.cliente_nombre}</td>
-                              <td className="py-2 text-right font-mono font-bold text-slate-900">
+                                <span className="text-xs font-mono font-semibold text-slate-700">{v.numero_comprobante}</span>
+                              </div>
+                              <p className="text-sm font-bold text-slate-900 truncate">{v.cliente_nombre}</p>
+                              <div className="flex items-center gap-1 text-xs text-slate-400 mt-1">
+                                <ClockIcon size={12} />
+                                {formatTimePe(v.fecha_venta)}
+                              </div>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <p className="text-lg font-bold font-mono text-slate-900">
                                 S/ {v.total.toFixed(2)}
-                              </td>
-                              <td className="py-2 text-right">
-                                <button
-                                  onClick={() => setShowVentaDetailModal(v)}
-                                  className="inline-flex items-center gap-1 text-orange-600 hover:text-orange-700 font-semibold text-[10px] px-2 py-1 rounded hover:bg-orange-50 transition-colors"
-                                >
-                                  <EyeIcon size={12} /> Ver
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                              </p>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setShowVentaDetailModal(v);
+                                }}
+                                className="inline-flex items-center gap-1 text-orange-600 hover:text-orange-700 font-semibold text-xs mt-1 px-2 py-1 rounded hover:bg-orange-50 transition-colors"
+                              >
+                                <EyeIcon size={12} /> Ver detalle
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
