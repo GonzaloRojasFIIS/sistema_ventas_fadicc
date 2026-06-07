@@ -9,6 +9,7 @@ import GradientModal from '@/components/ui/GradientModal';
 import GradientDrawer from '@/components/ui/GradientDrawer';
 import AnimatedCounter from '@/components/ui/AnimatedCounter';
 import { dbService, VentaComercial, Proforma as ProformaReal } from '@/lib/db';
+import { enviarCatalogoEmail } from '@/lib/emailService';
 
 /* ── Tipos ── */
 interface Cliente {
@@ -97,6 +98,8 @@ export default function ClientesPage() {
     totalHistorico: number;
   } | null>(null);
   const [loadingFicha, setLoadingFicha] = useState(false);
+  const [enviandoCatalogo, setEnviandoCatalogo] = useState(false);
+  const [catalogoStatus, setCatalogoStatus] = useState<{ ok: boolean; msg: string } | null>(null);
 
   const [activeTab, setActiveTab] = useState<'empresas' | 'contactos'>('empresas');
 
@@ -415,12 +418,48 @@ export default function ClientesPage() {
                       <span className="text-sm font-mono text-slate-600">{clienteDrawer.numeroDoc}</span>
                     </div>
                   </div>
-                  {ultimoVendedor && ultimoVendedor !== '—' && (
-                    <div className="text-right">
-                      <div className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Último vendedor</div>
-                      <div className="text-xs font-medium text-orange-600 mt-0.5">{ultimoVendedor}</div>
-                    </div>
-                  )}
+                  <div className="text-right space-y-1">
+                    {ultimoVendedor && ultimoVendedor !== '—' && (
+                      <div>
+                        <div className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Último vendedor</div>
+                        <div className="text-xs font-medium text-orange-600 mt-0.5">{ultimoVendedor}</div>
+                      </div>
+                    )}
+                    {catalogoStatus && (
+                      <div className={`text-xs font-medium ${catalogoStatus.ok ? 'text-emerald-600' : 'text-red-600'}`}>{catalogoStatus.msg}</div>
+                    )}
+                    <GradientButton
+                      variant="primary"
+                      size="sm"
+                      loading={enviandoCatalogo}
+                      onClick={async () => {
+                        setEnviandoCatalogo(true);
+                        setCatalogoStatus(null);
+                        try {
+                          const result = await enviarCatalogoEmail({
+                            to: clienteDrawer.email || 'gonzalo.rojas.c@uni.pe',
+                            clienteNombre: clienteDrawer.nombre,
+                            productos: [
+                              { nombre: 'Cocina Industrial 4 Hornillas', sku: 'COC-IND-04', precio: 1200 },
+                              { nombre: 'Cocina Industrial 6 Hornillas', sku: 'COC-IND-06', precio: 1890 },
+                              { nombre: 'Horno Convector Industrial', sku: 'HOR-CON-01', precio: 3400 },
+                            ],
+                          });
+                          setCatalogoStatus({ ok: result.success, msg: result.success ? 'Catálogo enviado.' : `Error: ${result.error}` });
+                        } catch {
+                          setCatalogoStatus({ ok: false, msg: 'Error al enviar catálogo.' });
+                        } finally {
+                          setEnviandoCatalogo(false);
+                          setTimeout(() => setCatalogoStatus(null), 4000);
+                        }
+                      }}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      Enviar catálogo
+                    </GradientButton>
+                  </div>
                 </div>
 
                 {/* Empresa (si es RUC) */}
