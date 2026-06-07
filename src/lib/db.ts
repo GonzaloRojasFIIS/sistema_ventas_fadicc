@@ -27,6 +27,26 @@ export interface Cliente {
   created_at?: string;
 }
 
+export interface Empresa {
+  id: string;
+  ruc: string;
+  razon_social: string;
+  telefono?: string;
+  email?: string;
+  direccion?: string;
+  created_at?: string;
+}
+
+export interface Contacto {
+  id: string;
+  empresa_id: string;
+  nombre: string;
+  cargo?: string;
+  telefono?: string;
+  email?: string;
+  created_at?: string;
+}
+
 export interface Producto {
   id: string;
   sku: string;
@@ -478,6 +498,58 @@ export const dbService = {
   async getClienteVentas(clienteId: string): Promise<VentaComercial[]> {
     const allVentas = getLocalData<VentaComercial[]>('fadicc_ventas', []);
     return allVentas.filter(v => v.cliente_id === clienteId);
+  },
+
+  // --- EMPRESAS ---
+  async getEmpresas(): Promise<Empresa[]> {
+    if (supabase) {
+      const { data, error } = await supabase.from('empresas').select('*').order('razon_social');
+      if (!error && data) return data;
+    }
+    return getLocalData<Empresa[]>('fadicc_empresas', [
+      { id: 'e1', ruc: '20123456789', razon_social: 'Constructora Horizonte S.A.C.', telefono: '01-444-5555', email: 'compras@horizonte.pe', direccion: 'Av. Javier Prado Este 505, San Isidro' },
+      { id: 'e2', ruc: '20987654321', razon_social: 'Hoteles del Perú S.A.', telefono: '01-333-2222', email: 'contacto@hotelesperu.com', direccion: 'Calle Larco 789, Miraflores' },
+      { id: 'e3', ruc: '20456123789', razon_social: 'Restaurantes Sabor S.A.C.', telefono: '01-555-6789', email: 'logistica@sabor.com.pe', direccion: 'Av. La Marina 2250, San Miguel' },
+    ]);
+  },
+
+  async createEmpresa(empresa: Omit<Empresa, 'id' | 'created_at'>): Promise<Empresa> {
+    if (supabase) {
+      const { data, error } = await supabase.from('empresas').insert([empresa]).select().single();
+      if (!error && data) return data;
+    }
+    const empresas = await this.getEmpresas();
+    const nueva: Empresa = { ...empresa, id: 'e_' + Math.random().toString(36).substr(2, 9), created_at: new Date().toISOString() };
+    empresas.push(nueva);
+    setLocalData('fadicc_empresas', empresas);
+    return nueva;
+  },
+
+  // --- CONTACTOS ---
+  async getContactos(empresaId?: string): Promise<Contacto[]> {
+    if (supabase) {
+      const query = supabase.from('contactos').select('*');
+      const { data, error } = empresaId ? await query.eq('empresa_id', empresaId) : await query;
+      if (!error && data) return data;
+    }
+    const all = getLocalData<Contacto[]>('fadicc_contactos', [
+      { id: 'co1', empresa_id: 'e1', nombre: 'Roberto Díaz', cargo: 'Jefe de Compras', telefono: '01-444-5556', email: 'rdiaz@horizonte.pe' },
+      { id: 'co2', empresa_id: 'e2', nombre: 'Sofía Ramírez', cargo: 'Gerente General', telefono: '01-333-2223', email: 'sramirez@hotelesperu.com' },
+      { id: 'co3', empresa_id: 'e3', nombre: 'Miguel Ángel Torres', cargo: 'Administrador', telefono: '01-555-6790', email: 'mtorres@sabor.com.pe' },
+    ]);
+    return empresaId ? all.filter(c => c.empresa_id === empresaId) : all;
+  },
+
+  async createContacto(contacto: Omit<Contacto, 'id' | 'created_at'>): Promise<Contacto> {
+    if (supabase) {
+      const { data, error } = await supabase.from('contactos').insert([contacto]).select().single();
+      if (!error && data) return data;
+    }
+    const all = getLocalData<Contacto[]>('fadicc_contactos', []);
+    const nuevo: Contacto = { ...contacto, id: 'co_' + Math.random().toString(36).substr(2, 9), created_at: new Date().toISOString() };
+    all.push(nuevo);
+    setLocalData('fadicc_contactos', all);
+    return nuevo;
   },
 
   // --- CAJA ---
