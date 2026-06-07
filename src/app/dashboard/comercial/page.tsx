@@ -601,6 +601,9 @@ export default function CanalComercialPage() {
                         <p className="text-xs text-slate-500 line-clamp-2">
                           {p.descripcion || 'Sin descripción disponible.'}
                         </p>
+                        <p className="text-[11px] font-semibold text-slate-600">
+                          Stock disponible: <span className="font-mono text-orange-600">{p.stock_actual}</span> unidades
+                        </p>
                       </div>
 
                       {/* Footer */}
