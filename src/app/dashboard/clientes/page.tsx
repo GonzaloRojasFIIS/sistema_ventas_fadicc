@@ -1,12 +1,14 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import GradientCard from '@/components/ui/GradientCard';
 import GradientButton from '@/components/ui/GradientButton';
 import GlassInput from '@/components/ui/GlassInput';
 import StatusBadge from '@/components/ui/StatusBadge';
 import GradientModal from '@/components/ui/GradientModal';
 import GradientDrawer from '@/components/ui/GradientDrawer';
+import AnimatedCounter from '@/components/ui/AnimatedCounter';
+import { dbService, VentaComercial, Proforma as ProformaReal } from '@/lib/db';
 
 /* ── Tipos ── */
 interface Cliente {
@@ -83,6 +85,19 @@ export default function ClientesPage() {
   const [clienteDrawer, setClienteDrawer] = useState<Cliente | null>(null);
   const [editando, setEditando] = useState<Partial<Cliente>>({});
 
+  // Ficha de contacto
+  const [historialVentas, setHistorialVentas] = useState<VentaComercial[]>([]);
+  const [historialProformas, setHistorialProformas] = useState<ProformaReal[]>([]);
+  const [ultimoVendedor, setUltimoVendedor] = useState<string>('');
+  const [preferencias, setPreferencias] = useState<{
+    productoFavorito: string;
+    categoriaFavorita: string;
+    ticketPromedio: number;
+    frecuenciaMensual: number;
+    totalHistorico: number;
+  } | null>(null);
+  const [loadingFicha, setLoadingFicha] = useState(false);
+
   const [activeTab, setActiveTab] = useState<'empresas' | 'contactos'>('empresas');
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -110,10 +125,23 @@ export default function ClientesPage() {
   const totalPages = Math.max(1, Math.ceil(filtrados.length / PAGE_SIZE));
   const paginados = filtrados.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  function abrirDrawer(cliente: Cliente) {
+  async function abrirDrawer(cliente: Cliente) {
     setClienteDrawer(cliente);
     setEditando({});
     setDrawerOpen(true);
+    setLoadingFicha(true);
+    try {
+      const historial = await dbService.getClienteHistorial(cliente.id);
+      const prefs = await dbService.getClientePreferencias(cliente.id);
+      setHistorialVentas(historial.ventas);
+      setHistorialProformas(historial.proformas);
+      setUltimoVendedor(historial.ultimoVendedor || '—');
+      setPreferencias(prefs);
+    } catch {
+      // fallback silencioso
+    } finally {
+      setLoadingFicha(false);
+    }
   }
 
   function toggleEditarCampo<K extends keyof Cliente>(campo: K, valor: Cliente[K]) {
@@ -365,170 +393,170 @@ export default function ClientesPage() {
       >
         {clienteDrawer && (
           <div className="space-y-6">
-            {/* Datos */}
-            <div className="space-y-3">
-              <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Datos generales</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Tipo de documento</label>
-                  <div className="flex items-center gap-2">
-                    <StatusBadge variant={clienteDrawer.tipoDoc === 'RUC' ? 'info' : 'neutral'} dot={false}>
-                      {clienteDrawer.tipoDoc}
-                    </StatusBadge>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Número</label>
-                  <p className="text-sm font-mono text-slate-800">{clienteDrawer.numeroDoc}</p>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Nombre / Razón social</label>
-                  <GlassInput
-                    value={editando.nombre ?? clienteDrawer.nombre}
-                    onChange={(e) => toggleEditarCampo('nombre', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Teléfono</label>
-                  <GlassInput
-                    value={editando.telefono ?? clienteDrawer.telefono}
-                    onChange={(e) => toggleEditarCampo('telefono', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Email</label>
-                  <GlassInput
-                    value={editando.email ?? clienteDrawer.email}
-                    onChange={(e) => toggleEditarCampo('email', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Dirección</label>
-                  <GlassInput
-                    value={editando.direccion ?? clienteDrawer.direccion}
-                    onChange={(e) => toggleEditarCampo('direccion', e.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Contacto (solo empresas) */}
-            {clienteDrawer.tipoDoc === 'RUC' && (
-              <div className="space-y-3">
-                <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                  <span>Contacto</span>
-                  <span className="text-[10px] font-normal text-slate-500 normal-case">Persona de contacto ligada a la empresa</span>
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Nombre del contacto</label>
-                    <GlassInput
-                      value={editando.contactoNombre ?? clienteDrawer.contactoNombre ?? ''}
-                      onChange={(e) => toggleEditarCampo('contactoNombre', e.target.value)}
-                      placeholder="Ej. Juan Pérez"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Cargo</label>
-                    <GlassInput
-                      value={editando.contactoCargo ?? clienteDrawer.contactoCargo ?? ''}
-                      onChange={(e) => toggleEditarCampo('contactoCargo', e.target.value)}
-                      placeholder="Ej. Gerente de Compras"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Teléfono del contacto</label>
-                    <GlassInput
-                      value={editando.contactoTelefono ?? clienteDrawer.contactoTelefono ?? ''}
-                      onChange={(e) => toggleEditarCampo('contactoTelefono', e.target.value)}
-                      placeholder="Ej. 999888777"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Email del contacto</label>
-                    <GlassInput
-                      value={editando.contactoEmail ?? clienteDrawer.contactoEmail ?? ''}
-                      onChange={(e) => toggleEditarCampo('contactoEmail', e.target.value)}
-                      placeholder="Ej. contacto@empresa.com"
-                    />
-                  </div>
-                </div>
+            {/* Loading */}
+            {loadingFicha && (
+              <div className="flex items-center justify-center py-8 text-slate-400 text-sm">
+                <svg className="animate-spin mr-2 h-4 w-4 text-orange-500" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Cargando ficha...
               </div>
             )}
 
-            {/* Historial de ventas */}
-            <div className="space-y-3">
-              <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Historial de ventas</h4>
-              <div className="overflow-x-auto rounded-lg border border-slate-100">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-slate-50/60 border-b border-slate-100">
-                      <th className="text-left px-3 py-2 font-semibold text-slate-700">Fecha</th>
-                      <th className="text-right px-3 py-2 font-semibold text-slate-700">Total</th>
-                      <th className="text-left px-3 py-2 font-semibold text-slate-700">Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {ventasCliente.map((v) => (
-                      <tr key={v.id} className="border-b border-slate-100 hover:bg-slate-50/40">
-                        <td className="px-3 py-2 text-slate-600">{v.fecha}</td>
-                        <td className="px-3 py-2 text-right font-semibold text-slate-800">S/ {v.total.toFixed(2)}</td>
-                        <td className="px-3 py-2">
-                          <StatusBadge variant={v.estado === 'Completada' ? 'success' : 'warning'} dot={false}>
-                            {v.estado}
-                          </StatusBadge>
-                        </td>
-                      </tr>
-                    ))}
-                    {ventasCliente.length === 0 && (
-                      <tr>
-                        <td colSpan={3} className="px-3 py-6 text-center text-slate-400">
-                          Sin ventas registradas.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Proformas asociadas */}
-            <div className="space-y-3">
-              <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Proformas asociadas</h4>
-              <div className="space-y-2">
-                {proformasCliente.map((p) => (
-                  <div
-                    key={p.id}
-                    className="flex items-center justify-between px-3 py-2 rounded-lg border border-slate-100 bg-slate-50/40 hover:bg-slate-50/80"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-mono text-slate-500">{p.id}</span>
-                      <span className="text-sm text-slate-700">{p.fecha}</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-semibold text-slate-800">S/ {p.total.toFixed(2)}</span>
-                      <StatusBadge
-                        variant={
-                          p.estado === 'Aceptada'
-                            ? 'success'
-                            : p.estado === 'Rechazada'
-                            ? 'danger'
-                            : p.estado === 'Expirada'
-                            ? 'neutral'
-                            : 'warning'
-                        }
-                        dot={false}
-                      >
-                        {p.estado}
-                      </StatusBadge>
+            {!loadingFicha && (
+              <>
+                {/* Header */}
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold text-slate-900">{clienteDrawer.nombre}</h2>
+                    <div className="flex items-center gap-2 mt-1">
+                      <StatusBadge variant={clienteDrawer.tipoDoc === 'RUC' ? 'info' : 'neutral'} dot={false}>{clienteDrawer.tipoDoc}</StatusBadge>
+                      <span className="text-sm font-mono text-slate-600">{clienteDrawer.numeroDoc}</span>
                     </div>
                   </div>
-                ))}
-                {proformasCliente.length === 0 && (
-                  <p className="text-sm text-slate-400 text-center py-4">Sin proformas asociadas.</p>
+                  {ultimoVendedor && ultimoVendedor !== '—' && (
+                    <div className="text-right">
+                      <div className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Último vendedor</div>
+                      <div className="text-xs font-medium text-orange-600 mt-0.5">{ultimoVendedor}</div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Empresa (si es RUC) */}
+                {clienteDrawer.tipoDoc === 'RUC' && (
+                  <GradientCard className="p-4 space-y-2">
+                    <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Empresa</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <span className="text-xs text-slate-500">Razón social</span>
+                        <p className="font-semibold text-slate-800">{clienteDrawer.nombre}</p>
+                      </div>
+                      <div>
+                        <span className="text-xs text-slate-500">RUC</span>
+                        <p className="font-mono text-slate-800">{clienteDrawer.numeroDoc}</p>
+                      </div>
+                      <div>
+                        <span className="text-xs text-slate-500">Teléfono</span>
+                        <p className="text-slate-700">{clienteDrawer.telefono || '—'}</p>
+                      </div>
+                      <div>
+                        <span className="text-xs text-slate-500">Email</span>
+                        <p className="text-slate-700">{clienteDrawer.email || '—'}</p>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <span className="text-xs text-slate-500">Dirección</span>
+                        <p className="text-slate-700">{clienteDrawer.direccion || '—'}</p>
+                      </div>
+                    </div>
+                  </GradientCard>
                 )}
-              </div>
-            </div>
+
+                {/* Contacto */}
+                <GradientCard className="p-4 space-y-2">
+                  <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">{clienteDrawer.tipoDoc === 'RUC' ? 'Contacto de la empresa' : 'Datos de contacto'}</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="text-xs text-slate-500">Nombre</span>
+                      <p className="font-semibold text-slate-800">{clienteDrawer.contactoNombre || clienteDrawer.nombre}</p>
+                    </div>
+                    {clienteDrawer.contactoCargo && (
+                      <div>
+                        <span className="text-xs text-slate-500">Cargo</span>
+                        <p className="text-slate-700">{clienteDrawer.contactoCargo}</p>
+                      </div>
+                    )}
+                    <div>
+                      <span className="text-xs text-slate-500">Teléfono</span>
+                      <p className="text-slate-700">{clienteDrawer.contactoTelefono || clienteDrawer.telefono || '—'}</p>
+                    </div>
+                    <div>
+                      <span className="text-xs text-slate-500">Email</span>
+                      <p className="text-slate-700">{clienteDrawer.contactoEmail || clienteDrawer.email || '—'}</p>
+                    </div>
+                  </div>
+                </GradientCard>
+
+                {/* Preferencias calculadas */}
+                {preferencias && (
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Preferencias calculadas</h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <GradientCard className="p-3">
+                        <div className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Total histórico</div>
+                        <div className="text-lg font-extrabold font-mono text-slate-800 mt-1">S/ {preferencias.totalHistorico.toFixed(2)}</div>
+                      </GradientCard>
+                      <GradientCard className="p-3">
+                        <div className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Ticket promedio</div>
+                        <div className="text-lg font-extrabold font-mono text-slate-800 mt-1">S/ {preferencias.ticketPromedio.toFixed(2)}</div>
+                      </GradientCard>
+                      <GradientCard className="p-3">
+                        <div className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Frec. mensual</div>
+                        <div className="text-lg font-extrabold font-mono text-slate-800 mt-1">{preferencias.frecuenciaMensual.toFixed(1)} <span className="text-xs font-normal text-slate-500">ventas/mes</span></div>
+                      </GradientCard>
+                      <GradientCard className="p-3">
+                        <div className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Producto favorito</div>
+                        <div className="text-sm font-semibold text-slate-800 mt-1 truncate" title={preferencias.productoFavorito}>{preferencias.productoFavorito}</div>
+                      </GradientCard>
+                    </div>
+                  </div>
+                )}
+
+                {/* Historial de compras */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Historial de compras</h4>
+                  <div className="overflow-x-auto rounded-lg border border-slate-100">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-slate-50/60 border-b border-slate-100">
+                          <th className="text-left px-3 py-2 font-semibold text-slate-700">Fecha</th>
+                          <th className="text-right px-3 py-2 font-semibold text-slate-700">Total</th>
+                          <th className="text-left px-3 py-2 font-semibold text-slate-700">Comprobante</th>
+                          <th className="text-left px-3 py-2 font-semibold text-slate-700">Atendió</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {historialVentas.map((v) => (
+                          <tr key={v.id} className="border-b border-slate-100 hover:bg-slate-50/40">
+                            <td className="px-3 py-2 text-slate-600">{new Date(v.fecha_venta).toLocaleDateString('es-PE')}</td>
+                            <td className="px-3 py-2 text-right font-semibold text-slate-800">S/ {v.total.toFixed(2)}</td>
+                            <td className="px-3 py-2 text-slate-600">{v.numero_comprobante || '—'}</td>
+                            <td className="px-3 py-2 text-slate-600">{v.vendedor_id || '—'}</td>
+                          </tr>
+                        ))}
+                        {historialVentas.length === 0 && (
+                          <tr>
+                            <td colSpan={4} className="px-3 py-6 text-center text-slate-400">Sin compras registradas.</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Proformas */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Proformas asociadas</h4>
+                  <div className="space-y-2">
+                    {historialProformas.map((p) => (
+                      <div key={p.id} className="flex items-center justify-between px-3 py-2 rounded-lg border border-slate-100 bg-slate-50/40 hover:bg-slate-50/80">
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs font-mono text-slate-500">{p.codigo_proforma}</span>
+                          <span className="text-sm text-slate-700">{new Date(p.fecha_emision).toLocaleDateString('es-PE')}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-semibold text-slate-800">S/ {p.total.toFixed(2)}</span>
+                          <StatusBadge variant={p.estado === 'APROBADA' ? 'success' : p.estado === 'RECHAZADA' ? 'danger' : p.estado === 'EXPIRADA' ? 'neutral' : 'warning'} dot={false}>{p.estado}</StatusBadge>
+                        </div>
+                      </div>
+                    ))}
+                    {historialProformas.length === 0 && (
+                      <p className="text-sm text-slate-400 text-center py-4">Sin proformas asociadas.</p>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         )}
       </GradientDrawer>

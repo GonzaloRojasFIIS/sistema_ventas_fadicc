@@ -38,6 +38,7 @@ import {
   dbService,
 } from '@/lib/db';
 import { generarPdfProforma } from '@/lib/pdfService';
+import { useSession } from '@/context/SessionContext';
 
 // =========================================================================
 // TIPOS LOCALES
@@ -562,12 +563,14 @@ function WizardModal({
   onCreated,
   products,
   clients,
+  representanteId,
 }: {
   open: boolean;
   onClose: () => void;
   onCreated: () => void;
   products: Producto[];
   clients: Cliente[];
+  representanteId: string;
 }) {
   const [step, setStep] = useState(1);
   const [clientSearch, setClientSearch] = useState('');
@@ -657,7 +660,7 @@ function WizardModal({
     try {
       await dbService.createProforma({
         cliente_id: selectedClient.id,
-        representante_id: 'u2', // vendedor por defecto
+        representante_id: representanteId,
         fecha_vencimiento: new Date(dueDate).toISOString(),
         total,
         detalles: lines.map(l => ({
@@ -989,6 +992,7 @@ function WizardModal({
 // =========================================================================
 
 export default function IndustrialPage() {
+  const { usuario } = useSession();
   const [proformas, setProformas] = useState<Proforma[]>([]);
   const [products, setProducts] = useState<Producto[]>([]);
   const [clients, setClients] = useState<Cliente[]>([]);
@@ -1244,6 +1248,7 @@ export default function IndustrialPage() {
         }}
         products={products}
         clients={clients}
+        representanteId={usuario?.id || 'u2'}
       />
     </div>
   );

@@ -500,6 +500,54 @@ export const dbService = {
     return allVentas.filter(v => v.cliente_id === clienteId);
   },
 
+  async getClienteHistorial(clienteId: string): Promise<{ ventas: VentaComercial[]; proformas: Proforma[]; ultimoVendedor?: string }> {
+    const ventas = await this.getClienteVentas(clienteId);
+    const proformas = (await this.getProformas()).filter(p => p.cliente_id === clienteId);
+    const ultimaVenta = ventas.sort((a, b) => new Date(b.fecha_venta).getTime() - new Date(a.fecha_venta).getTime())[0];
+    return { ventas, proformas, ultimoVendedor: ultimaVenta?.vendedor_id };
+  },
+
+  async getClientePreferencias(clienteId: string): Promise<{
+    productoFavorito: string;
+    categoriaFavorita: string;
+    ticketPromedio: number;
+    frecuenciaMensual: number;
+    totalHistorico: number;
+  }> {
+    const ventas = await this.getClienteVentas(clienteId);
+    const totalHistorico = ventas.reduce((s, v) => s + v.total, 0);
+    const ticketPromedio = ventas.length > 0 ? totalHistorico / ventas.length : 0;
+
+    // Frecuencia: ventas por mes (últimos 6 meses)
+    const ahora = new Date();
+    const seisMesesAtras = new Date(ahora.getFullYear(), ahora.getMonth() - 5, 1);
+    const ventasRecientes = ventas.filter(v => new Date(v.fecha_venta) >= seisMesesAtras);
+    const mesesConVentas = new Set(ventasRecientes.map(v => {
+      const d = new Date(v.fecha_venta);
+      return `${d.getFullYear()}-${d.getMonth()}`;
+    })).size;
+    const frecuenciaMensual = mesesConVentas > 0 ? ventasRecientes.length / mesesConVentas : 0;
+
+    // Producto favorito: el más comprado por cantidad
+    const productoCantidad: Record<string, number> = {};
+    ventas.forEach(v => {
+      v.detalles?.forEach(d => {
+        const nombre = d.nombre || 'Producto sin nombre';
+        productoCantidad[nombre] = (productoCantidad[nombre] || 0) + d.cantidad;
+      });
+    });
+    const productoFavorito = Object.entries(productoCantidad).sort((a, b) => b[1] - a[1])[0]?.[0] || '—';
+
+    // Categoría favorita (mock por ahora, requiere mapear producto->categoría)
+    return {
+      productoFavorito,
+      categoriaFavorita: '—',
+      ticketPromedio,
+      frecuenciaMensual,
+      totalHistorico,
+    };
+  },
+
   // --- EMPRESAS ---
   async getEmpresas(): Promise<Empresa[]> {
     if (supabase) {
