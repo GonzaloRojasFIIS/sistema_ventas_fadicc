@@ -162,16 +162,28 @@ export default function CanalComercialPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [cart.length, cajaActiva, showVentaDetailModal, showNuevoClienteModal, showCierreModal, showClientResults, showShortcuts]);
 
-  // --- New client form ---
-  const [nuevoClienteForm, setNuevoClienteForm] = useState({
-    tipo_documento: 'DNI' as 'DNI' | 'RUC',
+  // --- Nuevo Cliente: separado en Persona / Empresa + Contacto ---
+  const [nuevoClienteTab, setNuevoClienteTab] = useState<'persona' | 'empresa'>('persona');
+
+  const [nuevaPersonaForm, setNuevaPersonaForm] = useState({
     numero_documento: '',
-    razon_social_o_nombre: '',
+    nombre: '',
     telefono: '',
-    contacto_nombre: '',
-    contacto_cargo: '',
-    contacto_telefono: '',
-    contacto_email: '',
+  });
+
+  const [nuevaEmpresaForm, setNuevaEmpresaForm] = useState({
+    ruc: '',
+    razon_social: '',
+    telefono: '',
+    email: '',
+    direccion: '',
+  });
+
+  const [nuevoContactoForm, setNuevoContactoForm] = useState({
+    nombre: '',
+    cargo: '',
+    telefono: '',
+    email: '',
   });
 
   // --- Alerts ---
@@ -406,55 +418,39 @@ export default function CanalComercialPage() {
     setShowClientResults(false);
   };
 
-  const handleCrearClienteRapido = async (e: React.FormEvent) => {
+  const handleCrearPersona = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { tipo_documento, numero_documento, razon_social_o_nombre, telefono, contacto_nombre, contacto_cargo, contacto_telefono, contacto_email } = nuevoClienteForm;
-
-    if (tipo_documento === 'DNI' && numero_documento.length !== 8) {
-      addAlerta('error', 'El DNI debe tener 8 dígitos.');
-      return;
-    }
-    if (tipo_documento === 'RUC' && numero_documento.length !== 11) {
-      addAlerta('error', 'El RUC debe tener 11 dígitos.');
-      return;
-    }
-    if (!razon_social_o_nombre.trim()) {
-      addAlerta('error', 'Ingresa el nombre o razón social.');
-      return;
-    }
-    if (tipo_documento === 'RUC' && !contacto_nombre.trim()) {
-      addAlerta('error', 'Para empresas (RUC) debes registrar un contacto.');
-      return;
-    }
-
+    const { numero_documento, nombre, telefono } = nuevaPersonaForm;
+    if (numero_documento.length !== 8) { addAlerta('error', 'El DNI debe tener 8 dígitos.'); return; }
+    if (!nombre.trim()) { addAlerta('error', 'Ingresa el nombre completo.'); return; }
     try {
-      const created = await dbService.createCliente({
-        tipo_documento,
-        numero_documento,
-        razon_social_o_nombre,
-        telefono: telefono || undefined,
-        contacto_nombre: contacto_nombre || undefined,
-        contacto_cargo: contacto_cargo || undefined,
-        contacto_telefono: contacto_telefono || undefined,
-        contacto_email: contacto_email || undefined,
-      });
+      const created = await dbService.createCliente({ tipo_documento: 'DNI', numero_documento, razon_social_o_nombre: nombre, telefono: telefono || undefined });
       setClientes((prev) => [...prev, created]);
       setSelectedCliente(created);
       setShowNuevoClienteModal(false);
-      setNuevoClienteForm({
-        tipo_documento: 'DNI',
-        numero_documento: '',
-        razon_social_o_nombre: '',
-        telefono: '',
-        contacto_nombre: '',
-        contacto_cargo: '',
-        contacto_telefono: '',
-        contacto_email: '',
-      });
-      addAlerta('success', 'Cliente registrado y seleccionado.');
-    } catch {
-      addAlerta('error', 'No se pudo registrar al cliente.');
-    }
+      setNuevaPersonaForm({ numero_documento: '', nombre: '', telefono: '' });
+      addAlerta('success', 'Persona registrada y seleccionada.');
+    } catch { addAlerta('error', 'No se pudo registrar a la persona.'); }
+  };
+
+  const handleCrearEmpresaYContacto = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const { ruc, razon_social, telefono, email, direccion } = nuevaEmpresaForm;
+    const { nombre, cargo, telefono: telContacto, email: emailContacto } = nuevoContactoForm;
+    if (ruc.length !== 11) { addAlerta('error', 'El RUC debe tener 11 dígitos.'); return; }
+    if (!razon_social.trim()) { addAlerta('error', 'Ingresa la razón social.'); return; }
+    if (!nombre.trim()) { addAlerta('error', 'Debes registrar un contacto para la empresa.'); return; }
+    try {
+      const empresa = await dbService.createEmpresa({ ruc, razon_social, telefono: telefono || undefined, email: email || undefined, direccion: direccion || undefined });
+      await dbService.createContacto({ empresa_id: empresa.id, nombre, cargo: cargo || undefined, telefono: telContacto || undefined, email: emailContacto || undefined });
+      const clienteLike: Cliente = { ...empresa, tipo_documento: 'RUC', numero_documento: empresa.ruc, razon_social_o_nombre: empresa.razon_social, contacto_nombre: nombre, contacto_cargo: cargo, contacto_telefono: telContacto, contacto_email: emailContacto };
+      setClientes((prev) => [...prev, clienteLike]);
+      setSelectedCliente(clienteLike);
+      setShowNuevoClienteModal(false);
+      setNuevaEmpresaForm({ ruc: '', razon_social: '', telefono: '', email: '', direccion: '' });
+      setNuevoContactoForm({ nombre: '', cargo: '', telefono: '', email: '' });
+      addAlerta('success', 'Empresa y contacto registrados.');
+    } catch { addAlerta('error', 'No se pudo registrar la empresa.'); }
   };
 
   // =========================================================================
@@ -789,6 +785,11 @@ export default function CanalComercialPage() {
                             <p className="text-[10px] font-mono text-slate-500 mt-0.5">
                               {selectedCliente.tipo_documento}: {selectedCliente.numero_documento}
                             </p>
+                            {selectedCliente.tipo_documento === 'RUC' && selectedCliente.contacto_nombre && (
+                              <p className="text-[10px] text-blue-600 mt-0.5">
+                                Contacto: {selectedCliente.contacto_nombre} {selectedCliente.contacto_cargo && `(${selectedCliente.contacto_cargo})`}
+                              </p>
+                            )}
                           </div>
                           <button
                             onClick={() => setSelectedCliente(null)}
@@ -866,6 +867,11 @@ export default function CanalComercialPage() {
                                     <span className="text-[10px] text-slate-500 font-mono">
                                       {c.tipo_documento}: {c.numero_documento}
                                     </span>
+                                    {c.tipo_documento === 'RUC' && c.contacto_nombre && (
+                                      <span className="text-[10px] text-blue-600">
+                                        Contacto: {c.contacto_nombre}
+                                      </span>
+                                    )}
                                   </button>
                                 ))
                               )}
@@ -1080,156 +1086,105 @@ export default function CanalComercialPage() {
       <GradientModal
         isOpen={showNuevoClienteModal}
         onClose={() => setShowNuevoClienteModal(false)}
-        title="Nuevo Cliente Rápido"
-        size="sm"
-        footer={
-          <>
-            <GradientButton variant="secondary" size="sm" onClick={() => setShowNuevoClienteModal(false)}>
-              Cancelar
-            </GradientButton>
-            <GradientButton variant="primary" size="sm" onClick={handleCrearClienteRapido}>
-              Guardar
-            </GradientButton>
-          </>
-        }
+        title="Nuevo Cliente"
+        size="md"
       >
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleCrearClienteRapido(e);
-          }}
-          className="space-y-4"
-        >
-          <div>
-            <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Tipo de Documento</label>
-            <div className="flex rounded-lg border border-slate-200 p-0.5 bg-slate-100 mt-1.5">
-              <button
-                type="button"
-                onClick={() =>
-                  setNuevoClienteForm((f) => ({ ...f, tipo_documento: 'DNI', numero_documento: '' }))
-                }
-                className={`flex-1 py-1.5 text-xs rounded-md font-bold transition-all ${
-                  nuevoClienteForm.tipo_documento === 'DNI'
-                    ? 'bg-white shadow-sm text-slate-900'
-                    : 'text-slate-500 hover:text-slate-700'
-                }`}
-              >
-                DNI
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  setNuevoClienteForm((f) => ({ ...f, tipo_documento: 'RUC', numero_documento: '' }))
-                }
-                className={`flex-1 py-1.5 text-xs rounded-md font-bold transition-all ${
-                  nuevoClienteForm.tipo_documento === 'RUC'
-                    ? 'bg-white shadow-sm text-slate-900'
-                    : 'text-slate-500 hover:text-slate-700'
-                }`}
-              >
-                RUC
-              </button>
+        {/* Tabs Persona / Empresa */}
+        <div className="flex rounded-lg border border-slate-200 p-0.5 bg-slate-100 mb-4">
+          <button
+            type="button"
+            onClick={() => setNuevoClienteTab('persona')}
+            className={`flex-1 py-1.5 text-xs rounded-md font-bold transition-all ${
+              nuevoClienteTab === 'persona' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            Persona (DNI)
+          </button>
+          <button
+            type="button"
+            onClick={() => setNuevoClienteTab('empresa')}
+            className={`flex-1 py-1.5 text-xs rounded-md font-bold transition-all ${
+              nuevoClienteTab === 'empresa' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            Empresa + Contacto (RUC)
+          </button>
+        </div>
+
+        {nuevoClienteTab === 'persona' ? (
+          <form onSubmit={handleCrearPersona} className="space-y-4">
+            <div>
+              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">DNI</label>
+              <GlassInput type="text" required maxLength={8} value={nuevaPersonaForm.numero_documento} onChange={(e) => setNuevaPersonaForm((f) => ({ ...f, numero_documento: e.target.value.replace(/\D/g, '') }))} placeholder="8 dígitos" className="mt-1.5 font-mono" />
             </div>
-          </div>
+            <div>
+              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Nombre completo</label>
+              <GlassInput type="text" required value={nuevaPersonaForm.nombre} onChange={(e) => setNuevaPersonaForm((f) => ({ ...f, nombre: e.target.value }))} placeholder="Ej. Juan Pérez García" className="mt-1.5" />
+            </div>
+            <div>
+              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Teléfono</label>
+              <GlassInput type="text" value={nuevaPersonaForm.telefono} onChange={(e) => setNuevaPersonaForm((f) => ({ ...f, telefono: e.target.value }))} placeholder="Ej. 999888777" className="mt-1.5" iconLeft={<PhoneIcon size={14} />} />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <GradientButton variant="secondary" size="sm" onClick={() => setShowNuevoClienteModal(false)}>Cancelar</GradientButton>
+              <GradientButton variant="primary" size="sm" onClick={handleCrearPersona}>Guardar Persona</GradientButton>
+            </div>
+          </form>
+        ) : (
+          <form onSubmit={handleCrearEmpresaYContacto} className="space-y-4">
+            <div className="bg-orange-50/40 border border-orange-100 rounded-lg p-3 space-y-3">
+              <span className="text-xs font-bold text-orange-700 uppercase tracking-wider">Datos de la empresa</span>
+              <div>
+                <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">RUC</label>
+                <GlassInput type="text" required maxLength={11} value={nuevaEmpresaForm.ruc} onChange={(e) => setNuevaEmpresaForm((f) => ({ ...f, ruc: e.target.value.replace(/\D/g, '') }))} placeholder="11 dígitos" className="mt-1.5 font-mono" />
+              </div>
+              <div>
+                <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Razón social</label>
+                <GlassInput type="text" required value={nuevaEmpresaForm.razon_social} onChange={(e) => setNuevaEmpresaForm((f) => ({ ...f, razon_social: e.target.value }))} placeholder="Ej. Comercial Fénix S.A.C." className="mt-1.5" />
+              </div>
+              <div>
+                <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Teléfono empresa</label>
+                <GlassInput type="text" value={nuevaEmpresaForm.telefono} onChange={(e) => setNuevaEmpresaForm((f) => ({ ...f, telefono: e.target.value }))} placeholder="Ej. 01-444-5555" className="mt-1.5" />
+              </div>
+              <div>
+                <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Email empresa</label>
+                <GlassInput type="email" value={nuevaEmpresaForm.email} onChange={(e) => setNuevaEmpresaForm((f) => ({ ...f, email: e.target.value }))} placeholder="Ej. ventas@empresa.com" className="mt-1.5" />
+              </div>
+              <div>
+                <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Dirección</label>
+                <GlassInput type="text" value={nuevaEmpresaForm.direccion} onChange={(e) => setNuevaEmpresaForm((f) => ({ ...f, direccion: e.target.value }))} placeholder="Ej. Av. Javier Prado 1234" className="mt-1.5" />
+              </div>
+            </div>
 
-          <div>
-            <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Número</label>
-            <GlassInput
-              type="text"
-              required
-              maxLength={nuevoClienteForm.tipo_documento === 'DNI' ? 8 : 11}
-              value={nuevoClienteForm.numero_documento}
-              onChange={(e) =>
-                setNuevoClienteForm((f) => ({
-                  ...f,
-                  numero_documento: e.target.value.replace(/\D/g, ''),
-                }))
-              }
-              placeholder={nuevoClienteForm.tipo_documento === 'DNI' ? '8 dígitos' : '11 dígitos'}
-              className="mt-1.5 font-mono"
-            />
-          </div>
-
-          <div>
-            <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
-              Razón Social / Nombre
-            </label>
-            <GlassInput
-              type="text"
-              required
-              value={nuevoClienteForm.razon_social_o_nombre}
-              onChange={(e) =>
-                setNuevoClienteForm((f) => ({ ...f, razon_social_o_nombre: e.target.value }))
-              }
-              placeholder="Ej. Comercial Fénix S.A.C."
-              className="mt-1.5"
-            />
-          </div>
-
-          <div>
-            <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Teléfono</label>
-            <GlassInput
-              type="text"
-              value={nuevoClienteForm.telefono}
-              onChange={(e) => setNuevoClienteForm((f) => ({ ...f, telefono: e.target.value }))}
-              placeholder="Ej. 999888777"
-              className="mt-1.5"
-              iconLeft={<PhoneIcon size={14} />}
-            />
-          </div>
-
-          {nuevoClienteForm.tipo_documento === 'RUC' && (
-            <div className="border-t border-slate-100 pt-4 space-y-3">
+            <div className="bg-blue-50/40 border border-blue-100 rounded-lg p-3 space-y-3">
               <div className="flex items-center gap-2">
-                <UserPlusIcon size={14} className="text-orange-500" />
-                <span className="text-xs font-bold text-slate-700">Contacto de la empresa</span>
+                <UserPlusIcon size={14} className="text-blue-600" />
+                <span className="text-xs font-bold text-blue-700 uppercase tracking-wider">Contacto de la empresa</span>
                 <span className="text-[10px] text-red-500 font-semibold">* obligatorio</span>
               </div>
               <div>
                 <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Nombre del contacto</label>
-                <GlassInput
-                  type="text"
-                  required={nuevoClienteForm.tipo_documento === 'RUC'}
-                  value={nuevoClienteForm.contacto_nombre}
-                  onChange={(e) => setNuevoClienteForm((f) => ({ ...f, contacto_nombre: e.target.value }))}
-                  placeholder="Ej. Juan Pérez"
-                  className="mt-1.5"
-                />
+                <GlassInput type="text" required value={nuevoContactoForm.nombre} onChange={(e) => setNuevoContactoForm((f) => ({ ...f, nombre: e.target.value }))} placeholder="Ej. Juan Pérez" className="mt-1.5" />
               </div>
               <div>
                 <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Cargo</label>
-                <GlassInput
-                  type="text"
-                  value={nuevoClienteForm.contacto_cargo}
-                  onChange={(e) => setNuevoClienteForm((f) => ({ ...f, contacto_cargo: e.target.value }))}
-                  placeholder="Ej. Gerente de Compras"
-                  className="mt-1.5"
-                />
+                <GlassInput type="text" value={nuevoContactoForm.cargo} onChange={(e) => setNuevoContactoForm((f) => ({ ...f, cargo: e.target.value }))} placeholder="Ej. Gerente de Compras" className="mt-1.5" />
               </div>
               <div>
                 <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Teléfono del contacto</label>
-                <GlassInput
-                  type="text"
-                  value={nuevoClienteForm.contacto_telefono}
-                  onChange={(e) => setNuevoClienteForm((f) => ({ ...f, contacto_telefono: e.target.value }))}
-                  placeholder="Ej. 999888777"
-                  className="mt-1.5"
-                  iconLeft={<PhoneIcon size={14} />}
-                />
+                <GlassInput type="text" value={nuevoContactoForm.telefono} onChange={(e) => setNuevoContactoForm((f) => ({ ...f, telefono: e.target.value }))} placeholder="Ej. 999888777" className="mt-1.5" iconLeft={<PhoneIcon size={14} />} />
               </div>
               <div>
                 <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Email del contacto</label>
-                <GlassInput
-                  type="email"
-                  value={nuevoClienteForm.contacto_email}
-                  onChange={(e) => setNuevoClienteForm((f) => ({ ...f, contacto_email: e.target.value }))}
-                  placeholder="Ej. contacto@empresa.com"
-                  className="mt-1.5"
-                />
+                <GlassInput type="email" value={nuevoContactoForm.email} onChange={(e) => setNuevoContactoForm((f) => ({ ...f, email: e.target.value }))} placeholder="Ej. contacto@empresa.com" className="mt-1.5" />
               </div>
             </div>
-          )}
-        </form>
+            <div className="flex justify-end gap-2 pt-2">
+              <GradientButton variant="secondary" size="sm" onClick={() => setShowNuevoClienteModal(false)}>Cancelar</GradientButton>
+              <GradientButton variant="primary" size="sm" onClick={handleCrearEmpresaYContacto}>Guardar Empresa + Contacto</GradientButton>
+            </div>
+          </form>
+        )}
       </GradientModal>
 
       {/* ==================== MODAL CIERRE CAJA ==================== */}

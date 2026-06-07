@@ -83,6 +83,8 @@ export default function ClientesPage() {
   const [clienteDrawer, setClienteDrawer] = useState<Cliente | null>(null);
   const [editando, setEditando] = useState<Partial<Cliente>>({});
 
+  const [activeTab, setActiveTab] = useState<'empresas' | 'contactos'>('empresas');
+
   const [modalOpen, setModalOpen] = useState(false);
   const [nuevoTipo, setNuevoTipo] = useState<'DNI' | 'RUC'>('DNI');
   const [nuevoDoc, setNuevoDoc] = useState('');
@@ -95,12 +97,15 @@ export default function ClientesPage() {
 
   const filtrados = useMemo(() => {
     const q = busqueda.toLowerCase();
-    return clientes.filter(
-      (c) =>
-        c.nombre.toLowerCase().includes(q) ||
-        c.numeroDoc.includes(q)
-    );
-  }, [clientes, busqueda]);
+    return clientes
+      .filter(c => activeTab === 'empresas' ? c.tipoDoc === 'RUC' : true)
+      .filter(
+        (c) =>
+          c.nombre.toLowerCase().includes(q) ||
+          c.numeroDoc.includes(q) ||
+          (c.contactoNombre && c.contactoNombre.toLowerCase().includes(q))
+      );
+  }, [clientes, busqueda, activeTab]);
 
   const totalPages = Math.max(1, Math.ceil(filtrados.length / PAGE_SIZE));
   const paginados = filtrados.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -204,81 +209,140 @@ export default function ClientesPage() {
         </div>
       </div>
 
-      {/* Tabla */}
-      <GradientCard className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-100 bg-slate-50/60">
-                <th className="text-left px-4 py-3 font-semibold text-slate-700">Nombre</th>
-                <th className="text-left px-4 py-3 font-semibold text-slate-700">Documento</th>
-                <th className="text-left px-4 py-3 font-semibold text-slate-700">Teléfono</th>
-                <th className="text-left px-4 py-3 font-semibold text-slate-700">Email</th>
-                <th className="text-left px-4 py-3 font-semibold text-slate-700">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginados.map((c) => (
-                <tr key={c.id} className="border-b border-slate-100 transition-colors hover:bg-slate-50/60">
-                  <td className="px-4 py-3 font-medium text-slate-900">{c.nombre}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <StatusBadge variant={c.tipoDoc === 'RUC' ? 'info' : 'neutral'} dot={false}>
-                        {c.tipoDoc}
-                      </StatusBadge>
-                      <span className="font-mono text-slate-600">{c.numeroDoc}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-slate-600">{c.telefono}</td>
-                  <td className="px-4 py-3 text-slate-600">{c.email}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
+      {/* Tabs Empresas / Contactos */}
+      <div className="flex rounded-lg border border-slate-200 p-0.5 bg-slate-100 w-fit">
+        <button
+          onClick={() => { setActiveTab('empresas'); setPage(1); }}
+          className={`px-4 py-1.5 text-xs rounded-md font-bold transition-all ${
+            activeTab === 'empresas' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          Empresas
+        </button>
+        <button
+          onClick={() => { setActiveTab('contactos'); setPage(1); }}
+          className={`px-4 py-1.5 text-xs rounded-md font-bold transition-all ${
+            activeTab === 'contactos' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          Contactos
+        </button>
+      </div>
+
+      {/* Tabla Empresas */}
+      {activeTab === 'empresas' && (
+        <GradientCard className="overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-100 bg-slate-50/60">
+                  <th className="text-left px-4 py-3 font-semibold text-slate-700">Razón Social</th>
+                  <th className="text-left px-4 py-3 font-semibold text-slate-700">RUC</th>
+                  <th className="text-left px-4 py-3 font-semibold text-slate-700">Teléfono</th>
+                  <th className="text-left px-4 py-3 font-semibold text-slate-700">Contacto principal</th>
+                  <th className="text-left px-4 py-3 font-semibold text-slate-700">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginados.map((c) => (
+                  <tr key={c.id} className="border-b border-slate-100 transition-colors hover:bg-slate-50/60">
+                    <td className="px-4 py-3 font-medium text-slate-900">{c.nombre}</td>
+                    <td className="px-4 py-3 font-mono text-slate-600">{c.numeroDoc}</td>
+                    <td className="px-4 py-3 text-slate-600">{c.telefono}</td>
+                    <td className="px-4 py-3 text-slate-600">
+                      {c.contactoNombre ? (
+                        <div>
+                          <div className="font-medium text-slate-800">{c.contactoNombre}</div>
+                          {c.contactoCargo && <div className="text-[10px] text-slate-500">{c.contactoCargo}</div>}
+                        </div>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
                       <GradientButton variant="ghost" size="sm" onClick={() => abrirDrawer(c)} title="Ver ficha">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                           <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                         </svg>
                       </GradientButton>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {paginados.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-slate-400">
-                    No se encontraron clientes.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Paginación */}
-        <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 bg-slate-50/40">
-          <span className="text-xs text-slate-500">
-            Página {page} de {totalPages} — {filtrados.length} resultados
-          </span>
-          <div className="flex items-center gap-2">
-            <GradientButton
-              variant="secondary"
-              size="sm"
-              disabled={page === 1}
-              onClick={() => setPage((p) => p - 1)}
-            >
-              Anterior
-            </GradientButton>
-            <GradientButton
-              variant="secondary"
-              size="sm"
-              disabled={page === totalPages}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Siguiente
-            </GradientButton>
+                    </td>
+                  </tr>
+                ))}
+                {paginados.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-8 text-center text-slate-400">No se encontraron empresas.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
-        </div>
-      </GradientCard>
+          <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 bg-slate-50/40">
+            <span className="text-xs text-slate-500">Página {page} de {totalPages} — {filtrados.length} resultados</span>
+            <div className="flex items-center gap-2">
+              <GradientButton variant="secondary" size="sm" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>Anterior</GradientButton>
+              <GradientButton variant="secondary" size="sm" disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>Siguiente</GradientButton>
+            </div>
+          </div>
+        </GradientCard>
+      )}
+
+      {/* Tabla Contactos */}
+      {activeTab === 'contactos' && (
+        <GradientCard className="overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-100 bg-slate-50/60">
+                  <th className="text-left px-4 py-3 font-semibold text-slate-700">Nombre</th>
+                  <th className="text-left px-4 py-3 font-semibold text-slate-700">Cargo</th>
+                  <th className="text-left px-4 py-3 font-semibold text-slate-700">Teléfono</th>
+                  <th className="text-left px-4 py-3 font-semibold text-slate-700">Email</th>
+                  <th className="text-left px-4 py-3 font-semibold text-slate-700">Empresa</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(() => {
+                  const contactos = clientes
+                    .filter(c => c.tipoDoc === 'RUC' && c.contactoNombre)
+                    .map(c => ({
+                      id: c.id + '_contacto',
+                      nombre: c.contactoNombre!,
+                      cargo: c.contactoCargo || '',
+                      telefono: c.contactoTelefono || '',
+                      email: c.contactoEmail || '',
+                      empresa: c.nombre,
+                    }));
+                  const q = busqueda.toLowerCase();
+                  const filtradosContactos = contactos.filter(c =>
+                    c.nombre.toLowerCase().includes(q) || c.empresa.toLowerCase().includes(q)
+                  );
+                  const totalPagesContactos = Math.max(1, Math.ceil(filtradosContactos.length / PAGE_SIZE));
+                  const paginadosContactos = filtradosContactos.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+                  return (
+                    <>
+                      {paginadosContactos.map((c) => (
+                        <tr key={c.id} className="border-b border-slate-100 transition-colors hover:bg-slate-50/60">
+                          <td className="px-4 py-3 font-medium text-slate-900">{c.nombre}</td>
+                          <td className="px-4 py-3 text-slate-600">{c.cargo || '—'}</td>
+                          <td className="px-4 py-3 text-slate-600">{c.telefono || '—'}</td>
+                          <td className="px-4 py-3 text-slate-600">{c.email || '—'}</td>
+                          <td className="px-4 py-3 text-slate-600">{c.empresa}</td>
+                        </tr>
+                      ))}
+                      {paginadosContactos.length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="px-4 py-8 text-center text-slate-400">No se encontraron contactos.</td>
+                        </tr>
+                      )}
+                    </>
+                  );
+                })()}
+              </tbody>
+            </table>
+          </div>
+        </GradientCard>
+      )}
 
       {/* Drawer Ficha Cliente */}
       <GradientDrawer
