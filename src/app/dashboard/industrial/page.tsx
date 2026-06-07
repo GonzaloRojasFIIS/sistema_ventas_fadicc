@@ -889,6 +889,16 @@ function WizardModal({
                 {selectedClient?.razon_social_o_nombre}
               </div>
               <div className="text-xs text-slate-500 font-mono">{selectedClient?.numero_documento}</div>
+              {selectedClient?.contacto_nombre && (
+                <div className="border-t border-slate-100 pt-2 mt-2">
+                  <div className="text-xs font-semibold text-slate-600">Contacto: {selectedClient.contacto_nombre}</div>
+                  {selectedClient.contacto_cargo && <div className="text-[10px] text-slate-500">{selectedClient.contacto_cargo}</div>}
+                  <div className="text-[10px] text-slate-400">
+                    {selectedClient.contacto_telefono && <span>{selectedClient.contacto_telefono}</span>}
+                    {selectedClient.contacto_email && <span className="ml-2">{selectedClient.contacto_email}</span>}
+                  </div>
+                </div>
+              )}
             </GradientCard>
 
             <div className="border border-slate-200 rounded-lg overflow-hidden">

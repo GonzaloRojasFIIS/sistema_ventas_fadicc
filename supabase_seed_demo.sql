@@ -7,16 +7,16 @@
 -- =========================================================================
 -- 1. MÁS CLIENTES (15 nuevos, total 20)
 -- =========================================================================
-INSERT INTO clientes (tipo_documento, numero_documento, razon_social_o_nombre, telefono, email, direccion) VALUES
-('DNI', '11223344', 'Roberto Sánchez Vega',             '987654321', 'roberto.s@email.com',        'Av. Larco 340, Miraflores'),
-('DNI', '55667788', 'Lucía Fernández Gómez',            '912345678', 'lucia.f@email.com',          'Jr. Carabaya 120, Cercado'),
-('RUC', '20555566677', 'Restaurantes El Sabor S.A.C.',   '01-222-3333', 'admin@elsabor.pe',          'Av. La Marina 880, San Miguel'),
-('RUC', '20111122233', 'Inmobiliaria del Sol S.A.C.',    '01-777-8888', 'ventas@delsol.pe',          'Av. Javier Prado 2450, San Borja'),
-('RUC', '20999988877', 'Hoteles Cusco E.I.R.L.',         '01-444-5555', 'reservas@hotelcusco.com',    'Calle Belén 256, Cusco'),
-('DNI', '33445566', 'Carlos Mendoza Ríos',              '956789123', 'carlos.m@hotmail.com',       'Av. Angamos 780, Surquillo'),
-('RUC', '20666677788', 'Constructora Andina S.A.',       '01-333-9999', 'compras@andina.pe',          'Av. República de Panamá 2345, San Isidro'),
-('DNI', '77889900', 'Diana Quispe Huamán',              '943216578', 'diana.q@gmail.com',            'Av. Brasil 450, Pueblo Libre'),
-('RUC', '20333344455', 'Cafeterías del Centro S.A.C.',   '01-666-2222', 'pedidos@cafecentro.pe',      'Jr. de la Unión 560, Lima'),
+INSERT INTO clientes (tipo_documento, numero_documento, razon_social_o_nombre, telefono, email, direccion, contacto_nombre, contacto_cargo, contacto_telefono, contacto_email) VALUES
+('DNI', '11223344', 'Roberto Sánchez Vega',             '987654321', 'roberto.s@email.com',        'Av. Larco 340, Miraflores', NULL, NULL, NULL, NULL),
+('DNI', '55667788', 'Lucía Fernández Gómez',            '912345678', 'lucia.f@email.com',          'Jr. Carabaya 120, Cercado', NULL, NULL, NULL, NULL),
+('RUC', '20555566677', 'Restaurantes El Sabor S.A.C.',   '01-222-3333', 'admin@elsabor.pe',          'Av. La Marina 880, San Miguel', 'Juan Pérez', 'Jefe de Compras', '01-222-3334', 'jperez@elsabor.pe'),
+('RUC', '20111122233', 'Inmobiliaria del Sol S.A.C.',    '01-777-8888', 'ventas@delsol.pe',          'Av. Javier Prado 2450, San Borja', 'Ana García', 'Gerente Comercial', '01-777-8889', 'agarcia@delsol.pe'),
+('RUC', '20999988877', 'Hoteles Cusco E.I.R.L.',         '01-444-5555', 'reservas@hotelcusco.com',    'Calle Belén 256, Cusco', 'Luis Ramírez', 'Director de Operaciones', '01-444-5556', 'lramirez@hotelcusco.com'),
+('DNI', '33445566', 'Carlos Mendoza Ríos',              '956789123', 'carlos.m@hotmail.com',       'Av. Angamos 780, Surquillo', NULL, NULL, NULL, NULL),
+('RUC', '20666677788', 'Constructora Andina S.A.',       '01-333-9999', 'compras@andina.pe',          'Av. República de Panamá 2345, San Isidro', 'María López', 'Coordinadora de Proyectos', '01-333-9990', 'mlopez@andina.pe'),
+('DNI', '77889900', 'Diana Quispe Huamán',              '943216578', 'diana.q@gmail.com',            'Av. Brasil 450, Pueblo Libre', NULL, NULL, NULL, NULL),
+('RUC', '20333344455', 'Cafeterías del Centro S.A.C.',   '01-666-2222', 'pedidos@cafecentro.pe',      'Jr. de la Unión 560, Lima', 'Pedro Sánchez', 'Administrador', '01-666-2223', 'psanchez@cafecentro.pe'),
 ('DNI', '22334455', 'Pedro Castillo Torres',            '978901234', 'pedro.c@yahoo.com',            'Av. Arequipa 1890, Lince'),
 ('RUC', '20777788899', 'Supermercados Mega S.A.',        '01-555-4444', 'abastecimiento@mega.pe',     'Av. Panamericana Norte 3400, Los Olivos'),
 ('DNI', '66778899', 'Ana María Ruiz Díaz',              '934567890', 'anamaria.r@email.com',       'Calle Las Flores 123, San Borja'),

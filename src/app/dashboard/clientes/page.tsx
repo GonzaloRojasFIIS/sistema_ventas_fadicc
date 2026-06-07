@@ -18,6 +18,10 @@ interface Cliente {
   telefono: string;
   email: string;
   direccion: string;
+  contactoNombre?: string;
+  contactoCargo?: string;
+  contactoTelefono?: string;
+  contactoEmail?: string;
 }
 
 interface Venta {
@@ -39,11 +43,11 @@ interface Proforma {
 /* ── Datos de muestra ── */
 const CLIENTES_INICIALES: Cliente[] = [
   { id: 'c1', tipoDoc: 'DNI', numeroDoc: '45678231', nombre: 'Juan Pérez García', telefono: '987654321', email: 'juan.perez@mail.com', direccion: 'Av. Principal 123, Lima' },
-  { id: 'c2', tipoDoc: 'RUC', numeroDoc: '20123456789', nombre: 'Constructora del Norte S.A.C.', razonSocial: 'Constructora del Norte S.A.C.', telefono: '987123456', email: 'contacto@cdn.com', direccion: 'Calle Industrial 456, Callao' },
+  { id: 'c2', tipoDoc: 'RUC', numeroDoc: '20123456789', nombre: 'Constructora del Norte S.A.C.', razonSocial: 'Constructora del Norte S.A.C.', telefono: '987123456', email: 'contacto@cdn.com', direccion: 'Calle Industrial 456, Callao', contactoNombre: 'Roberto Díaz', contactoCargo: 'Jefe de Compras', contactoTelefono: '987123457', contactoEmail: 'rdiaz@cdn.com' },
   { id: 'c3', tipoDoc: 'DNI', numeroDoc: '78451236', nombre: 'María López Torres', telefono: '912345678', email: 'maria.lopez@mail.com', direccion: 'Jr. Comercio 789, Arequipa' },
-  { id: 'c4', tipoDoc: 'RUC', numeroDoc: '20567890123', nombre: 'Inversiones Metálicas E.I.R.L.', razonSocial: 'Inversiones Metálicas E.I.R.L.', telefono: '934567890', email: 'ventas@imetalicas.com', direccion: 'Av. del Ejército 890, Trujillo' },
+  { id: 'c4', tipoDoc: 'RUC', numeroDoc: '20567890123', nombre: 'Inversiones Metálicas E.I.R.L.', razonSocial: 'Inversiones Metálicas E.I.R.L.', telefono: '934567890', email: 'ventas@imetalicas.com', direccion: 'Av. del Ejército 890, Trujillo', contactoNombre: 'Sofía Ramírez', contactoCargo: 'Gerente General', contactoTelefono: '934567891', contactoEmail: 'sramirez@imetalicas.com' },
   { id: 'c5', tipoDoc: 'DNI', numeroDoc: '10236547', nombre: 'Carlos Ruiz Díaz', telefono: '956789012', email: 'carlos.ruiz@mail.com', direccion: 'Calle 5 de Mayo 321, Cusco' },
-  { id: 'c6', tipoDoc: 'RUC', numeroDoc: '20987654321', nombre: 'Soluciones Constructivas S.A.', razonSocial: 'Soluciones Constructivas S.A.', telefono: '978901234', email: 'admin@soluciones.com', direccion: 'Av. Prolongación 654, Chiclayo' },
+  { id: 'c6', tipoDoc: 'RUC', numeroDoc: '20987654321', nombre: 'Soluciones Constructivas S.A.', razonSocial: 'Soluciones Constructivas S.A.', telefono: '978901234', email: 'admin@soluciones.com', direccion: 'Av. Prolongación 654, Chiclayo', contactoNombre: 'Miguel Ángel Torres', contactoCargo: 'Administrador', contactoTelefono: '978901235', contactoEmail: 'mtorres@soluciones.com' },
   { id: 'c7', tipoDoc: 'DNI', numeroDoc: '36985214', nombre: 'Ana Martínez Vega', telefono: '901234567', email: 'ana.martinez@mail.com', direccion: 'Jr. Libertad 147, Piura' },
   { id: 'c8', tipoDoc: 'DNI', numeroDoc: '74125896', nombre: 'Pedro Sánchez Flores', telefono: '923456789', email: 'pedro.sanchez@mail.com', direccion: 'Calle Los Pinos 258, Iquitos' },
 ];
@@ -343,6 +347,50 @@ export default function ClientesPage() {
                 </div>
               </div>
             </div>
+
+            {/* Contacto (solo empresas) */}
+            {clienteDrawer.tipoDoc === 'RUC' && (
+              <div className="space-y-3">
+                <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <span>Contacto</span>
+                  <span className="text-[10px] font-normal text-slate-500 normal-case">Persona de contacto ligada a la empresa</span>
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Nombre del contacto</label>
+                    <GlassInput
+                      value={editando.contactoNombre ?? clienteDrawer.contactoNombre ?? ''}
+                      onChange={(e) => toggleEditarCampo('contactoNombre', e.target.value)}
+                      placeholder="Ej. Juan Pérez"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Cargo</label>
+                    <GlassInput
+                      value={editando.contactoCargo ?? clienteDrawer.contactoCargo ?? ''}
+                      onChange={(e) => toggleEditarCampo('contactoCargo', e.target.value)}
+                      placeholder="Ej. Gerente de Compras"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Teléfono del contacto</label>
+                    <GlassInput
+                      value={editando.contactoTelefono ?? clienteDrawer.contactoTelefono ?? ''}
+                      onChange={(e) => toggleEditarCampo('contactoTelefono', e.target.value)}
+                      placeholder="Ej. 999888777"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Email del contacto</label>
+                    <GlassInput
+                      value={editando.contactoEmail ?? clienteDrawer.contactoEmail ?? ''}
+                      onChange={(e) => toggleEditarCampo('contactoEmail', e.target.value)}
+                      placeholder="Ej. contacto@empresa.com"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Historial de ventas */}
             <div className="space-y-3">

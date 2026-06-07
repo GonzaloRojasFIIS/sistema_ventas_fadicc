@@ -20,6 +20,10 @@ export interface Cliente {
   telefono?: string;
   email?: string;
   direccion?: string;
+  contacto_nombre?: string;
+  contacto_cargo?: string;
+  contacto_telefono?: string;
+  contacto_email?: string;
   created_at?: string;
 }
 

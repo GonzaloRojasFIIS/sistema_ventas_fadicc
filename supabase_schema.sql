@@ -25,6 +25,10 @@ CREATE TABLE IF NOT EXISTS clientes (
     telefono VARCHAR(50),
     email VARCHAR(255),
     direccion TEXT,
+    contacto_nombre VARCHAR(255),
+    contacto_cargo VARCHAR(100),
+    contacto_telefono VARCHAR(50),
+    contacto_email VARCHAR(255),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -152,12 +156,12 @@ INSERT INTO usuarios (email, password_hash, nombre, rol, activo) VALUES
 ON CONFLICT (email) DO NOTHING;
 
 -- Clientes
-INSERT INTO clientes (tipo_documento, numero_documento, razon_social_o_nombre, telefono, email, direccion) VALUES
-('DNI', '44556677', 'Juan Pérez Quispe',                '999 888 777', 'juan.perez@email.com',       'Av. Arequipa 1234, Lince, Lima'),
-('DNI', '78901234', 'María García López',               '987 654 321', 'maria.garcia@email.com',     'Jr. Lampa 456, Cercado, Lima'),
-('RUC', '20123456789', 'Constructora Horizonte S.A.C.', '01-444-5555', 'compras@horizonte.pe',       'Av. Javier Prado Este 505, San Isidro'),
-('RUC', '20987654321', 'Hoteles del Perú S.A.',         '01-333-2222', 'contacto@hotelesperu.com',   'Calle Larco 789, Miraflores'),
-('RUC', '20456123789', 'Restaurantes Sabor S.A.C.',     '01-555-6789', 'logistica@sabor.com.pe',     'Av. La Marina 2250, San Miguel')
+INSERT INTO clientes (tipo_documento, numero_documento, razon_social_o_nombre, telefono, email, direccion, contacto_nombre, contacto_cargo, contacto_telefono, contacto_email) VALUES
+('DNI', '44556677', 'Juan Pérez Quispe',                '999 888 777', 'juan.perez@email.com',       'Av. Arequipa 1234, Lince, Lima', NULL, NULL, NULL, NULL),
+('DNI', '78901234', 'María García López',               '987 654 321', 'maria.garcia@email.com',     'Jr. Lampa 456, Cercado, Lima', NULL, NULL, NULL, NULL),
+('RUC', '20123456789', 'Constructora Horizonte S.A.C.', '01-444-5555', 'compras@horizonte.pe',       'Av. Javier Prado Este 505, San Isidro', 'Roberto Díaz', 'Jefe de Compras', '01-444-5556', 'rdiaz@horizonte.pe'),
+('RUC', '20987654321', 'Hoteles del Perú S.A.',         '01-333-2222', 'contacto@hotelesperu.com',   'Calle Larco 789, Miraflores', 'Sofía Ramírez', 'Gerente General', '01-333-2223', 'sramirez@hotelesperu.com'),
+('RUC', '20456123789', 'Restaurantes Sabor S.A.C.',     '01-555-6789', 'logistica@sabor.com.pe',     'Av. La Marina 2250, San Miguel', 'Miguel Ángel Torres', 'Administrador', '01-555-6790', 'mtorres@sabor.com.pe')
 ON CONFLICT (numero_documento) DO NOTHING;
 
 -- Productos (12 productos reales FADICC, nombres coinciden con imágenes en public/cocinas/)

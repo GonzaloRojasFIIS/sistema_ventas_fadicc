@@ -168,6 +168,10 @@ export default function CanalComercialPage() {
     numero_documento: '',
     razon_social_o_nombre: '',
     telefono: '',
+    contacto_nombre: '',
+    contacto_cargo: '',
+    contacto_telefono: '',
+    contacto_email: '',
   });
 
   // --- Alerts ---
@@ -404,7 +408,7 @@ export default function CanalComercialPage() {
 
   const handleCrearClienteRapido = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { tipo_documento, numero_documento, razon_social_o_nombre, telefono } = nuevoClienteForm;
+    const { tipo_documento, numero_documento, razon_social_o_nombre, telefono, contacto_nombre, contacto_cargo, contacto_telefono, contacto_email } = nuevoClienteForm;
 
     if (tipo_documento === 'DNI' && numero_documento.length !== 8) {
       addAlerta('error', 'El DNI debe tener 8 dígitos.');
@@ -418,6 +422,10 @@ export default function CanalComercialPage() {
       addAlerta('error', 'Ingresa el nombre o razón social.');
       return;
     }
+    if (tipo_documento === 'RUC' && !contacto_nombre.trim()) {
+      addAlerta('error', 'Para empresas (RUC) debes registrar un contacto.');
+      return;
+    }
 
     try {
       const created = await dbService.createCliente({
@@ -425,6 +433,10 @@ export default function CanalComercialPage() {
         numero_documento,
         razon_social_o_nombre,
         telefono: telefono || undefined,
+        contacto_nombre: contacto_nombre || undefined,
+        contacto_cargo: contacto_cargo || undefined,
+        contacto_telefono: contacto_telefono || undefined,
+        contacto_email: contacto_email || undefined,
       });
       setClientes((prev) => [...prev, created]);
       setSelectedCliente(created);
@@ -434,6 +446,10 @@ export default function CanalComercialPage() {
         numero_documento: '',
         razon_social_o_nombre: '',
         telefono: '',
+        contacto_nombre: '',
+        contacto_cargo: '',
+        contacto_telefono: '',
+        contacto_email: '',
       });
       addAlerta('success', 'Cliente registrado y seleccionado.');
     } catch {
@@ -1195,6 +1211,58 @@ export default function CanalComercialPage() {
               iconLeft={<PhoneIcon size={14} />}
             />
           </div>
+
+          {nuevoClienteForm.tipo_documento === 'RUC' && (
+            <div className="border-t border-slate-100 pt-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <UserPlusIcon size={14} className="text-orange-500" />
+                <span className="text-xs font-bold text-slate-700">Contacto de la empresa</span>
+                <span className="text-[10px] text-red-500 font-semibold">* obligatorio</span>
+              </div>
+              <div>
+                <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Nombre del contacto</label>
+                <GlassInput
+                  type="text"
+                  required={nuevoClienteForm.tipo_documento === 'RUC'}
+                  value={nuevoClienteForm.contacto_nombre}
+                  onChange={(e) => setNuevoClienteForm((f) => ({ ...f, contacto_nombre: e.target.value }))}
+                  placeholder="Ej. Juan Pérez"
+                  className="mt-1.5"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Cargo</label>
+                <GlassInput
+                  type="text"
+                  value={nuevoClienteForm.contacto_cargo}
+                  onChange={(e) => setNuevoClienteForm((f) => ({ ...f, contacto_cargo: e.target.value }))}
+                  placeholder="Ej. Gerente de Compras"
+                  className="mt-1.5"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Teléfono del contacto</label>
+                <GlassInput
+                  type="text"
+                  value={nuevoClienteForm.contacto_telefono}
+                  onChange={(e) => setNuevoClienteForm((f) => ({ ...f, contacto_telefono: e.target.value }))}
+                  placeholder="Ej. 999888777"
+                  className="mt-1.5"
+                  iconLeft={<PhoneIcon size={14} />}
+                />
+              </div>
+              <div>
+                <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Email del contacto</label>
+                <GlassInput
+                  type="email"
+                  value={nuevoClienteForm.contacto_email}
+                  onChange={(e) => setNuevoClienteForm((f) => ({ ...f, contacto_email: e.target.value }))}
+                  placeholder="Ej. contacto@empresa.com"
+                  className="mt-1.5"
+                />
+              </div>
+            </div>
+          )}
         </form>
       </GradientModal>
 
