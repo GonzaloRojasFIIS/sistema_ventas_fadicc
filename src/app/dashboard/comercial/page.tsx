@@ -1139,66 +1139,110 @@ export default function CanalComercialPage() {
       <GradientModal
         isOpen={!!showVentaDetailModal}
         onClose={() => setShowVentaDetailModal(null)}
-        title={`Venta ${showVentaDetailModal?.numero_comprobante ?? ''}`}
-        size="sm"
+        title={`${showVentaDetailModal?.tipo_comprobante === 'BOLETA' ? 'Boleta' : 'Factura'} ${showVentaDetailModal?.numero_comprobante ?? ''}`}
+        size="md"
       >
         {showVentaDetailModal && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 text-xs">
-              <span
-                className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
-                  showVentaDetailModal.tipo_comprobante === 'BOLETA'
-                    ? 'bg-blue-50 text-blue-700 border-blue-200'
-                    : 'bg-violet-50 text-violet-700 border-violet-200'
-                }`}
-              >
-                {showVentaDetailModal.tipo_comprobante}
-              </span>
-              <span className="text-slate-500 flex items-center gap-1">
-                <ClockIcon size={12} />
-                {formatTimePe(showVentaDetailModal.fecha_venta)}
-              </span>
+          <div className="space-y-5">
+            {/* Header con tipo y fecha */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span
+                  className={`px-3 py-1 rounded-lg text-xs font-bold border ${
+                    showVentaDetailModal.tipo_comprobante === 'BOLETA'
+                      ? 'bg-blue-50 text-blue-700 border-blue-200'
+                      : 'bg-violet-50 text-violet-700 border-violet-200'
+                  }`}
+                >
+                  {showVentaDetailModal.tipo_comprobante === 'BOLETA' ? 'BOLETA DE VENTA' : 'FACTURA ELECTRÓNICA'}
+                </span>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-slate-400">Fecha y hora</p>
+                <p className="text-sm font-mono font-semibold text-slate-700">
+                  {new Date(showVentaDetailModal.fecha_venta).toLocaleDateString('es-PE', { day: '2-digit', month: 'long', year: 'numeric' })}
+                </p>
+                <p className="text-xs font-mono text-slate-500">
+                  {formatTimePe(showVentaDetailModal.fecha_venta)}
+                </p>
+              </div>
             </div>
 
-            <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-1">
-              <p className="text-xs text-slate-500">
-                <span className="font-semibold">Cliente:</span>{' '}
-                <span className="text-slate-800">{showVentaDetailModal.cliente_nombre}</span>
-              </p>
-              <p className="text-xs text-slate-500">
-                <span className="font-semibold">Vendedor:</span>{' '}
-                <span className="text-slate-800">{showVentaDetailModal.vendedor_nombre}</span>
-              </p>
+            {/* Datos del cliente */}
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
+              <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Cliente</p>
+              <p className="text-sm font-bold text-slate-900">{showVentaDetailModal.cliente_nombre || 'Cliente General'}</p>
+              <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
+                <p><span className="font-semibold">Doc:</span> {showVentaDetailModal.cliente_id}</p>
+                <p><span className="font-semibold">Tel:</span> —</p>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Detalles</p>
-              {(showVentaDetailModal.detalles ?? []).map((d, i) => (
-                <div key={i} className="flex justify-between items-center text-xs py-2 border-b border-slate-100 last:border-0">
-                  <div className="min-w-0">
-                    <p className="font-semibold text-slate-800 truncate">{d.nombre}</p>
-                    <p className="text-[10px] font-mono text-slate-400">
-                      {d.cantidad} x S/ {d.precio_unitario.toFixed(2)}
-                    </p>
-                  </div>
-                  <span className="font-mono font-bold text-slate-900">S/ {d.subtotal.toFixed(2)}</span>
-                </div>
-              ))}
+            {/* Datos del vendedor y caja */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-white border border-slate-200 rounded-xl p-3">
+                <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1">Vendedor</p>
+                <p className="text-sm font-semibold text-slate-800">{showVentaDetailModal.vendedor_nombre || 'Vendedor'}</p>
+              </div>
+              <div className="bg-white border border-slate-200 rounded-xl p-3">
+                <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1">Caja Turno</p>
+                <p className="text-xs font-mono text-slate-600">{showVentaDetailModal.caja_turno_id?.slice(0, 8)}...</p>
+              </div>
             </div>
 
-            <div className="flex justify-between items-end pt-2 border-t border-dashed border-slate-200">
-              <span className="text-sm font-bold text-slate-900">Total</span>
-              <span className="text-xl font-bold font-mono text-slate-900">
-                S/ {showVentaDetailModal.total.toFixed(2)}
-              </span>
+            {/* Tabla de productos */}
+            <div>
+              <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-2">Productos</p>
+              <div className="border border-slate-200 rounded-xl overflow-hidden">
+                <table className="w-full text-xs">
+                  <thead className="bg-slate-50">
+                    <tr className="text-slate-500">
+                      <th className="text-left px-3 py-2 font-semibold">SKU</th>
+                      <th className="text-left px-3 py-2 font-semibold">Producto</th>
+                      <th className="text-center px-3 py-2 font-semibold">Cant.</th>
+                      <th className="text-right px-3 py-2 font-semibold">P. Unit.</th>
+                      <th className="text-right px-3 py-2 font-semibold">Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {(showVentaDetailModal.detalles ?? []).map((d, i) => (
+                      <tr key={i} className="hover:bg-slate-50/50">
+                        <td className="px-3 py-2 font-mono text-slate-500">{d.sku || '—'}</td>
+                        <td className="px-3 py-2 font-medium text-slate-800">{d.nombre || 'Producto'}</td>
+                        <td className="px-3 py-2 text-center font-mono text-slate-700">{d.cantidad}</td>
+                        <td className="px-3 py-2 text-right font-mono text-slate-700">S/ {d.precio_unitario.toFixed(2)}</td>
+                        <td className="px-3 py-2 text-right font-mono font-semibold text-slate-900">S/ {d.subtotal.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
-            {/* Botón descargar PDF */}
-            <div className="pt-2">
+            {/* Totales desglosados */}
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
+              <div className="flex justify-between text-sm text-slate-600">
+                <span>Subtotal</span>
+                <span className="font-mono">S/ {(showVentaDetailModal.total / 1.18).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-sm text-slate-600">
+                <span>IGV (18%)</span>
+                <span className="font-mono">S/ {(showVentaDetailModal.total - showVentaDetailModal.total / 1.18).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center pt-2 border-t border-dashed border-slate-300">
+                <span className="text-base font-bold text-slate-900">TOTAL</span>
+                <span className="text-2xl font-bold font-mono text-orange-600">
+                  S/ {showVentaDetailModal.total.toFixed(2)}
+                </span>
+              </div>
+            </div>
+
+            {/* Botones de acción */}
+            <div className="flex gap-2 pt-2">
               <GradientButton
                 variant="secondary"
                 size="sm"
-                className="w-full"
+                className="flex-1"
                 onClick={async () => {
                   const ventaCompleta = await dbService.getVentaById(showVentaDetailModal.id);
                   if (ventaCompleta) {
@@ -1212,6 +1256,13 @@ export default function CanalComercialPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 Descargar PDF
+              </GradientButton>
+              <GradientButton
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowVentaDetailModal(null)}
+              >
+                Cerrar
               </GradientButton>
             </div>
           </div>
