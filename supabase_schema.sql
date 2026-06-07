@@ -160,16 +160,20 @@ INSERT INTO clientes (tipo_documento, numero_documento, razon_social_o_nombre, t
 ('RUC', '20456123789', 'Restaurantes Sabor S.A.C.',     '01-555-6789', 'logistica@sabor.com.pe',     'Av. La Marina 2250, San Miguel')
 ON CONFLICT (numero_documento) DO NOTHING;
 
--- Productos (con categoría e imagen)
+-- Productos (12 productos reales FADICC, nombres coinciden con imágenes en public/cocinas/)
 INSERT INTO productos (sku, nombre, descripcion, categoria, precio_base, stock_actual, stock_minimo, imagen) VALUES
-('COC-IND-04', 'Cocina Industrial 4 Hornillas',      'Acero inoxidable 304, alta presión, quemadores de hierro fundido',        'Industrial',  1250.00, 8,  3, '/cocinas/Cocina-de-4-horno-mesa-y-pie.png'),
-('COC-IND-06', 'Cocina Industrial 6 Hornillas',      'Con horno convector integrado, acero inoxidable, ideal restaurantes',     'Industrial',  1890.00, 4,  2, '/cocinas/De-3-hornias.png'),
-('COC-IND-08', 'Cocina Industrial 8 Hornillas',      'Modelo profesional doble-cuerpo, para cocinas de gran volumen',          'Industrial',  2850.00, 2,  2, '/cocinas/De-4-hornias.png'),
-('COC-COM-04', 'Cocina Semi-Industrial 4 Hornillas', 'Diseño compacto para uso comercial ligero o doméstico exigente',         'Comercial',    750.00, 12, 5, '/cocinas/Cocina-de-2-horno-mesa-y-pie.png'),
-('COC-DOM-04', 'Cocina Doméstica Premium 4 Hornillas','Gas, encendido eléctrico, tapa de vidrio templado, rejillas de hierro', 'Doméstico',    450.00, 2,  5, '/cocinas/Cocinas-22in.png'),
-('HOR-IND-01', 'Horno Convector Industrial',         'Capacidad 10 bandejas 60x40, control digital de temperatura',            'Industrial',  3400.00, 0,  1, '/cocinas/Horno-Acero.png'),
-('HOR-COM-01', 'Horno Mixto Comercial',              'Gas/eléctrico, 6 bandejas, ideal panaderías y pastelerías medianas',     'Comercial',   1890.00, 3,  2, '/cocinas/Chiferos-y-Fogones.png'),
-('ACC-PLA-01', 'Plancha Industrial Lisa',             'Acero grueso 10mm, doble quemador, mango antitérmico',                  'Accesorios',   890.00, 6,  3, '/cocinas/Cocina-de-1-horno-mesa-y-pie.png')
+('FAD-1H-MP',  'Cocina 1 Hornillo Mesa y Pie',       'Semi-industrial de acero inoxidable, 1 hornillo de alta presión. Ideal para puestos de comida.',                                    'Cocina Semi Industriales',  480.00,  12, 4, '/cocinas/Cocina-de-1-horno-mesa-y-pie.png'),
+('FAD-2H-MP',  'Cocina 2 Hornillos Mesa y Pie',      'Semi-industrial de acero inoxidable, 2 hornillos de alta presión. Equilibrio entre capacidad y espacio.',                           'Cocina Semi Industriales',  720.00,   9, 3, '/cocinas/Cocina-de-2-horno-mesa-y-pie.png'),
+('FAD-3H-MP',  'Cocina 3 Hornillos Mesa y Pie',      'Semi-industrial de acero inoxidable, 3 hornillos de alta presión. Para restaurantes pequeños y medianos.',                           'Cocina Semi Industriales',  950.00,   7, 3, '/cocinas/Cocina-de-3-horno-mesa-y-pie.png'),
+('FAD-4H-MP',  'Cocina 4 Hornillos Mesa y Pie',      'Semi-industrial de acero inoxidable, 4 hornillos de alta presión. Máxima capacidad para cocinas comerciales.',                       'Cocina Semi Industriales',  1250.00,  5, 2, '/cocinas/Cocina-de-4-horno-mesa-y-pie.png'),
+('FAD-2H-SL',  'Cocina De 2 Hornillas',              'Modelo Slim-Line semi-industrial con 2 hornillas de alta presión y patas reforzadas.',                                               'Cocina Semi Industriales',  680.00,  10, 3, '/cocinas/De-2-hornias.png'),
+('FAD-3H-SL',  'Cocina De 3 Hornillas',              'Modelo Slim-Line semi-industrial con 3 hornillas de alta presión y patas reforzadas.',                                               'Cocina Semi Industriales',  890.00,   8, 3, '/cocinas/De-3-hornias.png'),
+('FAD-4H-SL',  'Cocina De 4 Hornillas',              'Modelo Slim-Line semi-industrial con 4 hornillas de alta presión y patas reforzadas.',                                               'Cocina Semi Industriales',  1150.00,  6, 2, '/cocinas/De-4-hornias.png'),
+('FAD-DOM-20', 'Cocinas 20″',                        'Cocina doméstica de 20 pulgadas con tapa de vidrio templado. 4 hornillas estándar para uso residencial.',                            'Cocinas Domesticas',        380.00,  15, 5, '/cocinas/Cocinas-20in.png'),
+('FAD-DOM-22', 'Cocinas 22″',                        'Cocina doméstica de 22 pulgadas con tapa de vidrio templado. Mayor espacio de cocción para el hogar.',                                'Cocinas Domesticas',        450.00,  11, 4, '/cocinas/Cocinas-22in.png'),
+('FAD-DOM-HO', 'Cocihorno',                          'Cocina doméstica con horno integrado en la base. 4 hornillas + horno eléctrico/gas. El todo en uno para tu hogar.',                   'Cocinas Domesticas',        520.00,   7, 3, '/cocinas/Cocihorno.png'),
+('FAD-HOR-AC', 'Horno Acero',                          'Horno industrial construido completamente en acero inoxidable. Ideal para panaderías, pastelerías y restaurantes.',                  'Hornos',                   2400.00,  3, 1, '/cocinas/Horno-Acero.png'),
+('FAD-HOR-CF', 'Chiferos & Fogones',                 'Sistema de cocción industrial tipo chifero/fogón de alta potencia. Usado en restaurantes chinos y cocinas de alto rendimiento.',     'Hornos',                   1100.00,  5, 2, '/cocinas/Chiferos-y-Fogones.png')
 ON CONFLICT (sku) DO NOTHING;
 
 -- Proforma de prueba (PENDIENTE)

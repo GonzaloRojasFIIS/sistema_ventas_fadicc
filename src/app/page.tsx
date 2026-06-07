@@ -3,6 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from '@/context/SessionContext';
+import { dbService } from '@/lib/db';
+import GlassInput from '@/components/ui/GlassInput';
+import GradientButton from '@/components/ui/GradientButton';
+import GradientModal from '@/components/ui/GradientModal';
 import {
   ComercialIcon,
   IndustrialIcon,
@@ -39,6 +43,11 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  const [showRecover, setShowRecover] = useState(false);
+  const [recoverEmail, setRecoverEmail] = useState('');
+  const [recoverLoading, setRecoverLoading] = useState(false);
+  const [recoverMessage, setRecoverMessage] = useState('');
+
   useEffect(() => {
     if (!loading && usuario) {
       router.push('/dashboard');
@@ -65,6 +74,21 @@ export default function LoginPage() {
     setEmail(acc);
     setPassword('123456');
     setError('');
+  };
+
+  const handleRecover = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRecoverLoading(true);
+    setRecoverMessage('');
+    try {
+      await dbService.recuperarPassword(recoverEmail);
+      setRecoverMessage('Si el email existe en nuestro sistema, recibirás instrucciones para restablecer tu contraseña.');
+      setRecoverEmail('');
+    } catch {
+      setRecoverMessage('Error de conexión. Intenta nuevamente.');
+    } finally {
+      setRecoverLoading(false);
+    }
   };
 
   if (loading) {
@@ -217,6 +241,20 @@ export default function LoginPage() {
                   'Iniciar Sesión'
                 )}
               </button>
+
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowRecover(true);
+                    setRecoverMessage('');
+                    setRecoverEmail('');
+                  }}
+                  className="text-sm text-orange-600 hover:text-orange-700 font-medium transition-colors cursor-pointer"
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
+              </div>
             </form>
 
             {/* Test accounts collapsible */}
@@ -247,6 +285,41 @@ export default function LoginPage() {
                 </p>
               </details>
             </div>
+
+            {/* Recuperar contraseña modal */}
+            <GradientModal
+              isOpen={showRecover}
+              onClose={() => setShowRecover(false)}
+              title="Recuperar Contraseña"
+              size="sm"
+            >
+              <form onSubmit={handleRecover} className="space-y-4">
+                <p className="text-sm text-slate-600">
+                  Ingresa tu correo electrónico y te enviaremos instrucciones para restablecer tu contraseña.
+                </p>
+                <GlassInput
+                  type="email"
+                  placeholder="nombre@fadicc.com"
+                  value={recoverEmail}
+                  onChange={(e) => setRecoverEmail(e.target.value)}
+                  iconLeft={<MailIcon className="w-4 h-4" />}
+                  required
+                />
+                {recoverMessage && (
+                  <div className="text-sm text-slate-700 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5">
+                    {recoverMessage}
+                  </div>
+                )}
+                <div className="flex justify-end gap-3 pt-2">
+                  <GradientButton variant="ghost" size="sm" type="button" onClick={() => setShowRecover(false)}>
+                    Cancelar
+                  </GradientButton>
+                  <GradientButton variant="primary" size="sm" loading={recoverLoading} type="submit">
+                    Enviar
+                  </GradientButton>
+                </div>
+              </form>
+            </GradientModal>
           </div>
 
           {/* Footer */}

@@ -512,6 +512,29 @@ export const dbService = {
     return true;
   },
 
+  // --- CORRELATIVOS ---
+  async getNextCorrelativo(tipo: 'BOLETA' | 'FACTURA'): Promise<string> {
+    const serie = tipo === 'BOLETA' ? 'B001' : 'F001';
+
+    if (supabase) {
+      // Usar RPC de Supabase para incremento atómico
+      const { data, error } = await supabase.rpc('incrementar_correlativo', {
+        p_tipo_comprobante: tipo,
+        p_serie: serie,
+      });
+      if (!error && data) {
+        return `${serie}-${String(data).padStart(6, '0')}`;
+      }
+    }
+
+    // Fallback localStorage
+    const key = `fadicc_correlativo_${tipo}`;
+    let current = parseInt(localStorage.getItem(key) || '0', 10);
+    current += 1;
+    localStorage.setItem(key, current.toString());
+    return `${serie}-${String(current).padStart(6, '0')}`;
+  },
+
   // --- VENTAS COMERCIALES ---
   async registrarVentaDirecta(venta: {
     cliente_id: string;
@@ -521,7 +544,7 @@ export const dbService = {
     total: number;
     detalles: { producto_id: string; cantidad: number; precio_unitario: number }[];
   }): Promise<string> {
-    const numComp = (venta.tipo_comprobante === 'BOLETA' ? 'B001-' : 'F001-') + Math.floor(100000 + Math.random() * 900000);
+    const numComp = await this.getNextCorrelativo(venta.tipo_comprobante);
 
     if (supabase) {
       const { data: ventaDb, error: errVenta } = await supabase
@@ -1045,5 +1068,28 @@ export const dbService = {
     const user = INITIAL_USERS.find(u => u.email === email);
     if (user && password === '123456') return user;
     return null;
+  },
+
+  async recuperarPassword(email: string): Promise<boolean> {
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('usuarios')
+        .select('id')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (!error && data) {
+        console.log(`[Simulación] Email de recuperación enviado a: ${email}`);
+        return true;
+      }
+      return false;
+    }
+
+    const users = getLocalData<Usuario[]>('fadicc_usuarios_admin', INITIAL_USERS);
+    const exists = users.some(u => u.email === email);
+    if (exists) {
+      console.log(`[Simulación] Email de recuperación enviado a: ${email}`);
+    }
+    return exists;
   },
 };

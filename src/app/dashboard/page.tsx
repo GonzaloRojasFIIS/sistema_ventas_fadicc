@@ -11,6 +11,7 @@ import {
   Actividad,
   VendedorPerformance,
   Proforma,
+  Producto,
 } from '@/lib/db';
 import GradientCard from '@/components/ui/GradientCard';
 import AnimatedCounter from '@/components/ui/AnimatedCounter';
@@ -234,6 +235,7 @@ export default function DashboardPage() {
   const [actividades, setActividades] = useState<Actividad[]>([]);
   const [proformas, setProformas] = useState<Proforma[]>([]);
   const [vendedores, setVendedores] = useState<VendedorPerformance[]>([]);
+  const [productos, setProductos] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateTime, setDateTime] = useState<string>('');
 
@@ -274,17 +276,19 @@ export default function DashboardPage() {
     async function load() {
       if (!usuario || usuario.rol !== 'ADMIN') return;
       try {
-        const [kpiRes, ventasRes, productosRes, actRes, profRes, vendRes] = await Promise.all([
+        const [kpiRes, ventasRes, topProdRes, prodRes, actRes, profRes, vendRes] = await Promise.all([
           dbService.getKpis(),
           dbService.getVentasPorDia(),
           dbService.getTopProductos(),
+          dbService.getProducts(),
           dbService.getActividadReciente(),
           dbService.getProformas(),
           dbService.getVendedoresPerformance(),
         ]);
         setKpis(kpiRes);
         setVentasPorDia(ventasRes);
-        setTopProductos(productosRes);
+        setTopProductos(topProdRes);
+        setProductos(prodRes);
         setActividades(actRes);
         setProformas(profRes);
         setVendedores(vendRes);
@@ -324,6 +328,21 @@ export default function DashboardPage() {
   }, [proformas]);
 
   const metaCumplimiento = kpis ? (kpis.real_mensual / kpis.meta_mensual) * 100 : 0;
+
+  const alertasStockBajo = useMemo(
+    () => productos.filter((p) => p.stock_actual <= p.stock_minimo).length,
+    [productos]
+  );
+
+  const alertasProformasVencidas = useMemo(() => {
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    return proformas.filter((p) => {
+      const venc = new Date(p.fecha_vencimiento);
+      venc.setHours(0, 0, 0, 0);
+      return venc < hoy && (p.estado === 'PENDIENTE' || p.estado === 'EN_NEGOCIACION');
+    }).length;
+  }, [proformas]);
 
   /* ---------- Estado de carga global ---------- */
   if (sessionLoading || !usuario || usuario.rol !== 'ADMIN') {
@@ -457,6 +476,59 @@ export default function DashboardPage() {
           alert={(kpis?.proformas_vencidas ?? 0) > 0}
           loading={loading}
         />
+      </div>
+
+      {/* ============================================================== */}
+      {/*  ALERTAS                                                          */}
+      {/* ============================================================== */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <GradientCard accentTop accentColor="bg-gradient-to-r from-red-500 to-rose-400" hover>
+          <div className="p-5 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Stock Bajo</p>
+              <div className="flex items-baseline gap-2">
+                <AnimatedCounter
+                  value={alertasStockBajo}
+                  duration={800}
+                  className="text-2xl font-extrabold text-slate-800 tracking-tight"
+                />
+                <StatusBadge variant="danger" className="text-[10px] py-0 px-1.5">
+                  {alertasStockBajo > 0 ? 'CRÍTICO' : 'OK'}
+                </StatusBadge>
+              </div>
+              <p className="text-[10px] text-slate-400 mt-1 font-medium">
+                Productos con stock_actual ≤ stock_mínimo
+              </p>
+            </div>
+            <div className="p-2.5 rounded-lg bg-red-50 text-red-600">
+              <Package className="w-5 h-5" />
+            </div>
+          </div>
+        </GradientCard>
+
+        <GradientCard accentTop accentColor="bg-gradient-to-r from-amber-500 to-yellow-400" hover>
+          <div className="p-5 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Proformas Vencidas</p>
+              <div className="flex items-baseline gap-2">
+                <AnimatedCounter
+                  value={alertasProformasVencidas}
+                  duration={800}
+                  className="text-2xl font-extrabold text-slate-800 tracking-tight"
+                />
+                <StatusBadge variant="warning" className="text-[10px] py-0 px-1.5">
+                  {alertasProformasVencidas > 0 ? 'ATENCIÓN' : 'OK'}
+                </StatusBadge>
+              </div>
+              <p className="text-[10px] text-slate-400 mt-1 font-medium">
+                PENDIENTE o EN_NEGOCIACION con fecha vencida
+              </p>
+            </div>
+            <div className="p-2.5 rounded-lg bg-amber-50 text-amber-600">
+              <FileText className="w-5 h-5" />
+            </div>
+          </div>
+        </GradientCard>
       </div>
 
       {/* ============================================================== */}

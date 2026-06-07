@@ -653,6 +653,49 @@ export default function CanalComercialPage() {
         {/* ==================== PANEL VENTA ==================== */}
         <div className="lg:col-span-1 sticky top-28">
           <GradientCard className="flex flex-col h-full max-h-[calc(100vh-8rem)]">
+            {/* Mini Dashboard Vendedor */}
+            {usuario && (usuario.rol === 'VENDEDOR' || usuario.rol === 'REPRESENTANTE') && (
+              <div className="p-4 border-b border-slate-100 bg-gradient-to-r from-orange-50/60 to-amber-50/30">
+                {(() => {
+                  const misVentas = ventasDelTurno.filter((v) => v.vendedor_id === usuario.id);
+                  const totalVentas = misVentas.reduce((s, v) => s + v.total, 0);
+                  const countVentas = misVentas.length;
+                  const ticketPromedio = countVentas > 0 ? totalVentas / countVentas : 0;
+                  const meta = usuario.rol === 'REPRESENTANTE' ? 8000 : 5000;
+                  const porcentaje = Math.min((totalVentas / meta) * 100, 100);
+                  return (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+                          Mi rendimiento hoy
+                        </span>
+                        <StatusBadge variant={porcentaje >= 100 ? 'success' : porcentaje >= 50 ? 'warning' : 'info'} className="text-[10px] py-0 px-1.5">
+                          {porcentaje.toFixed(1)}%
+                        </StatusBadge>
+                      </div>
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-xs font-semibold text-slate-500">S/</span>
+                        <span className="text-xl font-extrabold font-mono text-slate-800">{totalVentas.toFixed(2)}</span>
+                        <span className="text-[10px] text-slate-400 font-medium">/ S/ {meta.toLocaleString('es-PE')}</span>
+                      </div>
+                      <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden border border-slate-200/60">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-orange-500 to-amber-400"
+                          style={{ width: `${porcentaje}%` }}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between text-[10px] text-slate-500">
+                        <span className="font-semibold">{countVentas} venta{countVentas !== 1 ? 's' : ''}</span>
+                        <span className="font-medium">
+                          Ticket promedio: <span className="font-mono font-semibold text-slate-700">S/ {ticketPromedio.toFixed(2)}</span>
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
             {/* Tabs */}
             <div className="flex border-b border-slate-100">
               <button
