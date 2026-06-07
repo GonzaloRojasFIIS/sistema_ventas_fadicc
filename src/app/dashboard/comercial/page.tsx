@@ -112,6 +112,23 @@ export default function CanalComercialPage() {
     setAlerts((prev) => prev.filter((a) => a.id !== id));
   }, []);
 
+  // --- Ver detalle de venta (carga completa con productos) ---
+  const handleVerDetalleVenta = useCallback(async (venta: VentaComercial) => {
+    setIsLoading(true);
+    try {
+      const completa = await dbService.getVentaById(venta.id);
+      if (completa) {
+        setShowVentaDetailModal(completa);
+      } else {
+        addAlerta('error', 'No se pudieron cargar los detalles de la venta.');
+      }
+    } catch {
+      addAlerta('error', 'Error al cargar el detalle de la venta.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [addAlerta]);
+
   // --- Refs ---
   const clientDropdownRef = useRef<HTMLDivElement>(null);
   const debouncedProductSearch = useDebounce(productSearch, 300);
@@ -911,7 +928,7 @@ export default function CanalComercialPage() {
                         <div
                           key={v.id}
                           className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-                          onClick={() => setShowVentaDetailModal(v)}
+                          onClick={() => handleVerDetalleVenta(v)}
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0 flex-1">
@@ -940,7 +957,7 @@ export default function CanalComercialPage() {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setShowVentaDetailModal(v);
+                                  handleVerDetalleVenta(v);
                                 }}
                                 className="inline-flex items-center gap-1 text-orange-600 hover:text-orange-700 font-semibold text-xs mt-1 px-2 py-1 rounded hover:bg-orange-50 transition-colors"
                               >
