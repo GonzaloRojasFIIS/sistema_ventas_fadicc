@@ -34,24 +34,40 @@ interface ProformaPdfData {
   }[];
 }
 
-function loadLogo(): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.src = '/logo-transparente.png';
-    img.onload = () => resolve(img);
-    img.onerror = reject;
-  });
+async function loadLogoBase64(): Promise<string | null> {
+  try {
+    const response = await fetch('/logo-transparente.png');
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
 }
 
-function addHeaderInfo(doc: jsPDF, titulo: string, fecha: string, logo: HTMLImageElement) {
-  // Logo real de la empresa
-  const logoW = 40;
-  const logoH = (logo.height / logo.width) * logoW;
-  doc.addImage(logo, 'PNG', 14, 8, logoW, logoH);
+function addHeaderInfo(doc: jsPDF, titulo: string, fecha: string, logoBase64: string | null) {
+  if (logoBase64) {
+    doc.addImage(logoBase64, 'PNG', 14, 8, 40, 12);
+  } else {
+    // Fallback: logo dibujado
+    doc.setFillColor(249, 115, 22);
+    doc.roundedRect(14, 8, 14, 14, 2, 2, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('F', 18.5, 19);
+    doc.setFontSize(16);
+    doc.setTextColor(234, 88, 12);
+    doc.text('FADICC', 30, 16);
+  }
 
   // Título del documento
   doc.setFontSize(14);
-  doc.setTextColor(15, 23, 42); // slate-900
+  doc.setTextColor(15, 23, 42);
   doc.setFont('helvetica', 'bold');
   doc.text(titulo, 196, 16, { align: 'right' });
 
@@ -62,14 +78,14 @@ function addHeaderInfo(doc: jsPDF, titulo: string, fecha: string, logo: HTMLImag
   doc.text(`Fecha emisión: ${new Date(fecha).toLocaleDateString('es-PE')}`, 196, 22, { align: 'right' });
 
   // Línea separadora
-  doc.setDrawColor(226, 232, 240); // slate-200
+  doc.setDrawColor(226, 232, 240);
   doc.setLineWidth(0.5);
   doc.line(14, 30, 196, 30);
 }
 
 function addFooter(doc: jsPDF, y: number) {
   doc.setFontSize(8);
-  doc.setTextColor(148, 163, 184); // slate-400
+  doc.setTextColor(148, 163, 184);
   doc.text('FADICC S.A. - Documento generado electrónicamente - www.fadicc.com.pe', 105, y, { align: 'center' });
   doc.text('Gracias por su preferencia', 105, y + 4, { align: 'center' });
 }
@@ -78,10 +94,9 @@ export async function generarPdfVenta(data: VentaPdfData) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const tipoLabel = data.tipo_comprobante === 'BOLETA' ? 'BOLETA DE VENTA' : 'FACTURA';
 
-  let logo: HTMLImageElement | null = null;
-  try { logo = await loadLogo(); } catch { /* si no carga, continúa sin logo */ }
+  const logoBase64 = await loadLogoBase64();
 
-  addHeaderInfo(doc, `${tipoLabel} N° ${data.numero_comprobante}`, data.fecha_venta, logo || new Image());
+  addHeaderInfo(doc, `${tipoLabel} N° ${data.numero_comprobante}`, data.fecha_venta, logoBase64);
 
   // Datos del cliente y vendedor
   doc.setFontSize(10);
@@ -109,13 +124,13 @@ export async function generarPdfVenta(data: VentaPdfData) {
     body,
     theme: 'grid',
     headStyles: {
-      fillColor: [249, 115, 22], // orange-500
+      fillColor: [249, 115, 22],
       textColor: [255, 255, 255],
       fontSize: 9,
       fontStyle: 'bold',
     },
     bodyStyles: { fontSize: 9, textColor: [15, 23, 42] },
-    alternateRowStyles: { fillColor: [248, 250, 252] }, // slate-50
+    alternateRowStyles: { fillColor: [248, 250, 252] },
     columnStyles: {
       0: { cellWidth: 30 },
       1: { cellWidth: 'auto' },
@@ -144,7 +159,7 @@ export async function generarPdfVenta(data: VentaPdfData) {
   doc.text(`S/ ${igv.toFixed(2)}`, 190, finalY + 16, { align: 'right' });
 
   doc.setFontSize(12);
-  doc.setTextColor(234, 88, 12); // orange-600
+  doc.setTextColor(234, 88, 12);
   doc.setFont('helvetica', 'bold');
   doc.text(`S/ ${data.total.toFixed(2)}`, 190, finalY + 24, { align: 'right' });
 
@@ -155,10 +170,9 @@ export async function generarPdfVenta(data: VentaPdfData) {
 export async function generarPdfProforma(data: ProformaPdfData) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
 
-  let logo: HTMLImageElement | null = null;
-  try { logo = await loadLogo(); } catch { /* si no carga, continúa sin logo */ }
+  const logoBase64 = await loadLogoBase64();
 
-  addHeaderInfo(doc, `PROFORMA N° ${data.codigo_proforma}`, data.fecha_emision, logo || new Image());
+  addHeaderInfo(doc, `PROFORMA N° ${data.codigo_proforma}`, data.fecha_emision, logoBase64);
 
   // Datos
   doc.setFontSize(10);
@@ -188,7 +202,7 @@ export async function generarPdfProforma(data: ProformaPdfData) {
     body,
     theme: 'grid',
     headStyles: {
-      fillColor: [59, 130, 246], // blue-500
+      fillColor: [59, 130, 246],
       textColor: [255, 255, 255],
       fontSize: 9,
       fontStyle: 'bold',
@@ -213,7 +227,7 @@ export async function generarPdfProforma(data: ProformaPdfData) {
   doc.text('TOTAL:', 150, finalY + 10, { align: 'right' });
 
   doc.setFontSize(13);
-  doc.setTextColor(59, 130, 246); // blue-600
+  doc.setTextColor(59, 130, 246);
   doc.setFont('helvetica', 'bold');
   doc.text(`S/ ${data.total.toFixed(2)}`, 190, finalY + 10, { align: 'right' });
 
