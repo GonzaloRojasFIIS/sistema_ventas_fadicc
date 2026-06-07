@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { dbService } from '@/lib/db';
 import GradientCard from '@/components/ui/GradientCard';
 import GradientButton from '@/components/ui/GradientButton';
 import GlassInput from '@/components/ui/GlassInput';
@@ -61,6 +62,23 @@ export default function AdminPage() {
   const [nuevoEmail, setNuevoEmail] = useState('');
   const [nuevoRol, setNuevoRol] = useState<UsuarioAdmin['rol']>('VENDEDOR');
   const [errorCrear, setErrorCrear] = useState('');
+
+  const [metaVendedor, setMetaVendedor] = useState<number>(5000);
+  const [metaRepresentante, setMetaRepresentante] = useState<number>(8000);
+  const [metasGuardadas, setMetasGuardadas] = useState(false);
+
+  useEffect(() => {
+    async function loadMetas() {
+      try {
+        const metas = await dbService.getMetasConfig();
+        setMetaVendedor(metas.vendedor);
+        setMetaRepresentante(metas.representante);
+      } catch (err) {
+        console.error('Error cargando metas:', err);
+      }
+    }
+    loadMetas();
+  }, []);
 
   const filtrados = usuarios.filter((u) => {
     const q = busqueda.toLowerCase();
@@ -125,6 +143,19 @@ export default function AdminPage() {
     setUsuarios((prev) =>
       prev.map((u) => (u.id === id ? { ...u, activo: !u.activo } : u))
     );
+  }
+
+  async function guardarMetas() {
+    try {
+      await dbService.setMetasConfig({
+        vendedor: Number(metaVendedor) || 0,
+        representante: Number(metaRepresentante) || 0,
+      });
+      setMetasGuardadas(true);
+      setTimeout(() => setMetasGuardadas(false), 3000);
+    } catch (err) {
+      console.error('Error guardando metas:', err);
+    }
   }
 
   return (
@@ -240,6 +271,48 @@ export default function AdminPage() {
               )}
             </tbody>
           </table>
+        </div>
+      </GradientCard>
+
+      {/* Configuración de Metas de Ventas */}
+      <GradientCard className="p-6">
+        <div className="flex flex-col gap-5">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">Configuración de Metas de Ventas</h2>
+            <p className="text-sm text-slate-500 mt-1">Define las metas mensuales por rol de ventas.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Meta mensual VENDEDORES (S/)</label>
+              <GlassInput
+                type="number"
+                min={0}
+                step={100}
+                value={metaVendedor}
+                onChange={(e) => setMetaVendedor(Number(e.target.value))}
+                placeholder="Ej: 5000"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Meta mensual REPRESENTANTES (S/)</label>
+              <GlassInput
+                type="number"
+                min={0}
+                step={100}
+                value={metaRepresentante}
+                onChange={(e) => setMetaRepresentante(Number(e.target.value))}
+                placeholder="Ej: 8000"
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <GradientButton variant="primary" size="md" onClick={guardarMetas}>
+              Guardar metas
+            </GradientButton>
+            {metasGuardadas && (
+              <span className="text-sm font-semibold text-emerald-600">Metas guardadas correctamente.</span>
+            )}
+          </div>
         </div>
       </GradientCard>
 

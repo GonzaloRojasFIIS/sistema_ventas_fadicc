@@ -46,6 +46,12 @@ export default function InventarioPage() {
   const [drawerHistorialOpen, setDrawerHistorialOpen] = useState(false);
   const [productoHistorial, setProductoHistorial] = useState<ProductoDb | null>(null);
 
+  const [tabActivo, setTabActivo] = useState<'stock' | 'kardex'>('stock');
+  const [productoKardexId, setProductoKardexId] = useState<string>('');
+  const [movimientosKardex, setMovimientosKardex] = useState<MovimientoStock[]>([]);
+  const [kardexCalculado, setKardexCalculado] = useState<{ mov: MovimientoStock; saldo: number }[]>([]);
+  const [kardexLoading, setKardexLoading] = useState(false);
+
   /* Carga inicial desde dbService (Supabase o localStorage) */
   useEffect(() => {
     async function loadData() {
@@ -65,6 +71,37 @@ export default function InventarioPage() {
     }
     loadData();
   }, []);
+
+  useEffect(() => {
+    async function loadKardex() {
+      if (!productoKardexId) {
+        setMovimientosKardex([]);
+        setKardexCalculado([]);
+        return;
+      }
+      setKardexLoading(true);
+      try {
+        const movs = await dbService.getMovimientosStock(productoKardexId);
+        const ordenados = [...movs].sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+        let saldo = 0;
+        const calculados = ordenados.map((m, i) => {
+          if (i === 0) {
+            saldo = m.cantidad_anterior + m.diferencia;
+          } else {
+            saldo = saldo + m.diferencia;
+          }
+          return { mov: m, saldo };
+        });
+        setMovimientosKardex(ordenados);
+        setKardexCalculado(calculados);
+      } catch (err) {
+        console.error('Error cargando kardex:', err);
+      } finally {
+        setKardexLoading(false);
+      }
+    }
+    loadKardex();
+  }, [productoKardexId]);
 
   const categorias = useMemo(() => {
     const cats = new Set(productos.map((p) => p.categoria || 'General'));
@@ -176,23 +213,43 @@ export default function InventarioPage() {
         </div>
       </div>
 
-      {/* Tabs de categoría */}
-      <div className="flex items-center gap-2 overflow-x-auto">
-        {categorias.map((cat) => (
-          <GradientButton
-            key={cat}
-            variant={categoriaActiva === cat ? 'primary' : 'secondary'}
-            size="sm"
-            onClick={() => setCategoriaActiva(cat)}
-            className="whitespace-nowrap"
-          >
-            {cat}
-          </GradientButton>
-        ))}
+      {/* Tabs principales */}
+      <div className="flex items-center gap-2">
+        <GradientButton
+          variant={tabActivo === 'stock' ? 'primary' : 'secondary'}
+          size="sm"
+          onClick={() => setTabActivo('stock')}
+        >
+          Stock
+        </GradientButton>
+        <GradientButton
+          variant={tabActivo === 'kardex' ? 'primary' : 'secondary'}
+          size="sm"
+          onClick={() => setTabActivo('kardex')}
+        >
+          Kardex
+        </GradientButton>
       </div>
 
-      {/* Tabla */}
-      <GradientCard className="overflow-hidden">
+      {tabActivo === 'stock' && (
+        <>
+          {/* Tabs de categoría */}
+          <div className="flex items-center gap-2 overflow-x-auto">
+            {categorias.map((cat) => (
+              <GradientButton
+                key={cat}
+                variant={categoriaActiva === cat ? 'primary' : 'secondary'}
+                size="sm"
+                onClick={() => setCategoriaActiva(cat)}
+                className="whitespace-nowrap"
+              >
+                {cat}
+              </GradientButton>
+            ))}
+          </div>
+
+          {/* Tabla */}
+          <GradientCard className="overflow-hidden">
         <div className="overflow-x-auto">
           {isLoading ? (
             <div className="flex items-center justify-center py-20">
@@ -277,6 +334,79 @@ export default function InventarioPage() {
           )}
         </div>
       </GradientCard>
+        </>
+      )}
+
+      {tabActivo === 'kardex' && (
+        <GradientCard className="overflow-hidden p-6 space-y-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+            <div className="w-full sm:w-80">
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Producto</label>
+              <select
+                className="w-full bg-white/80 backdrop-blur-sm border border-slate-200 rounded-lg text-sm text-slate-800 outline-none transition-all duration-150 focus:bg-white focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20 px-3.5 py-2.5"
+                value={productoKardexId}
+                onChange={(e) => setProductoKardexId(e.target.value)}
+              >
+                <option value="">Selecciona un producto...</option>
+                {productos.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.sku} — {p.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {productoKardexId && (
+              <div className="text-sm text-slate-600">
+                Stock actual: <strong className="text-slate-900">{productos.find(p => p.id === productoKardexId)?.stock_actual ?? '—'}</strong>
+              </div>
+            )}
+          </div>
+
+          {kardexLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <div className="h-8 w-8 rounded-full border-2 border-orange-500 border-t-transparent animate-spin" />
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-lg border border-slate-100">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-slate-50/60 border-b border-slate-100">
+                    <th className="text-left px-4 py-3 font-semibold text-slate-700">Fecha</th>
+                    <th className="text-left px-4 py-3 font-semibold text-slate-700">Tipo</th>
+                    <th className="text-left px-4 py-3 font-semibold text-slate-700">Motivo</th>
+                    <th className="text-right px-4 py-3 font-semibold text-slate-700">Cantidad</th>
+                    <th className="text-right px-4 py-3 font-semibold text-slate-700">Saldo Acumulado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {kardexCalculado.map(({ mov, saldo }) => (
+                    <tr key={mov.id} className="border-b border-slate-100 hover:bg-slate-50/40">
+                      <td className="px-4 py-3 text-slate-600">{new Date(mov.fecha).toLocaleDateString('es-PE')}</td>
+                      <td className="px-4 py-3">
+                        <StatusBadge variant={mov.tipo === 'ENTRADA' ? 'success' : mov.tipo === 'SALIDA' ? 'danger' : 'info'} dot={false}>
+                          {mov.tipo}
+                        </StatusBadge>
+                      </td>
+                      <td className="px-4 py-3 text-slate-600">{mov.motivo}</td>
+                      <td className={`px-4 py-3 text-right font-semibold ${mov.diferencia > 0 ? 'text-emerald-700' : 'text-red-600'}`}>
+                        {mov.diferencia > 0 ? `+${mov.diferencia}` : mov.diferencia}
+                      </td>
+                      <td className="px-4 py-3 text-right font-bold text-slate-800">{saldo}</td>
+                    </tr>
+                  ))}
+                  {kardexCalculado.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-8 text-center text-slate-400">
+                        {productoKardexId ? 'No hay movimientos registrados para este producto.' : 'Selecciona un producto para ver su kardex.'}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </GradientCard>
+      )}
 
       {/* Modal Registrar Movimiento */}
       <GradientModal

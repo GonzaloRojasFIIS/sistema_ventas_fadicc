@@ -14,6 +14,7 @@ import {
   AdminIcon,
   ReportesIcon,
   LogoutIcon,
+  CompanyIcon,
 } from '@/components/Icons';
 
 const navItems = [
@@ -23,6 +24,7 @@ const navItems = [
   { href: '/dashboard/produccion', label: 'Planta y Despachos', icon: ProduccionIcon, roles: ['ADMIN', 'PRODUCCION', 'ALMACEN'] },
   { href: '/dashboard/inventario', label: 'Inventario', icon: InventarioIcon, roles: ['ADMIN', 'ALMACEN', 'VENDEDOR', 'REPRESENTANTE'] },
   { href: '/dashboard/clientes', label: 'Clientes', icon: ClientesIcon, roles: ['ADMIN', 'VENDEDOR', 'REPRESENTANTE'] },
+  { href: '/dashboard/proveedores', label: 'Proveedores', icon: CompanyIcon, roles: ['ADMIN', 'ALMACEN'] },
   { href: '/dashboard/reportes', label: 'Reportes', icon: ReportesIcon, roles: ['ADMIN'] },
   { href: '/dashboard/admin', label: 'Administración', icon: AdminIcon, roles: ['ADMIN'] },
 ] as const;

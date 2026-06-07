@@ -167,6 +167,20 @@ export interface VendedorPerformance {
   porcentaje: number;
 }
 
+export interface MetasConfig {
+  vendedor: number;
+  representante: number;
+}
+
+export interface Proveedor {
+  id: string;
+  ruc: string;
+  razon_social: string;
+  contacto: string;
+  telefono: string;
+  rubro: string;
+}
+
 // =========================================================================
 // CLIENTE SUPABASE
 // =========================================================================
@@ -1007,12 +1021,39 @@ export const dbService = {
   },
 
   async getVendedoresPerformance(): Promise<VendedorPerformance[]> {
+    const metas = await this.getMetasConfig();
     return [
-      { nombre: 'Carlos Vendedor', meta: 50000, real: 42300, porcentaje: 84.6 },
-      { nombre: 'Ana Representante', meta: 80000, real: 61200, porcentaje: 76.5 },
+      { nombre: 'Carlos Vendedor', meta: metas.vendedor, real: 42300, porcentaje: metas.vendedor > 0 ? Math.round((42300 / metas.vendedor) * 1000) / 10 : 0 },
+      { nombre: 'Ana Representante', meta: metas.representante, real: 61200, porcentaje: metas.representante > 0 ? Math.round((61200 / metas.representante) * 1000) / 10 : 0 },
       { nombre: 'Luis Almacenero', meta: 0, real: 0, porcentaje: 0 },
       { nombre: 'Marta Producción', meta: 0, real: 0, porcentaje: 0 },
     ].filter(v => v.meta > 0);
+  },
+
+  // --- METAS CONFIG ---
+  async getMetasConfig(): Promise<MetasConfig> {
+    return getLocalData<MetasConfig>('fadicc_metas_config', { vendedor: 5000, representante: 8000 });
+  },
+
+  async setMetasConfig(config: MetasConfig): Promise<void> {
+    setLocalData('fadicc_metas_config', config);
+  },
+
+  // --- PROVEEDORES ---
+  async getProveedores(): Promise<Proveedor[]> {
+    return getLocalData<Proveedor[]>('fadicc_proveedores', [
+      { id: 'prov1', ruc: '20123456789', razon_social: 'Insumos Metálicos del Perú S.A.C.', contacto: 'Jorge Díaz', telefono: '01-444-5555', rubro: 'Materia Prima' },
+      { id: 'prov2', ruc: '20987654321', razon_social: 'Hornos Industriales del Norte E.I.R.L.', contacto: 'Sofía López', telefono: '01-333-2222', rubro: 'Equipos y Repuestos' },
+      { id: 'prov3', ruc: '20548796321', razon_social: 'Distribuidora Nacional S.A.', contacto: 'Roberto Quispe', telefono: '01-222-1111', rubro: 'Distribución y Logística' },
+    ]);
+  },
+
+  async createProveedor(proveedor: Omit<Proveedor, 'id'>): Promise<Proveedor> {
+    const proveedores = await this.getProveedores();
+    const nuevo: Proveedor = { ...proveedor, id: 'prov_' + Math.random().toString(36).substr(2, 9) };
+    proveedores.push(nuevo);
+    setLocalData('fadicc_proveedores', proveedores);
+    return nuevo;
   },
 
   // --- PROFORMAS EXTRA ---
