@@ -1185,54 +1185,45 @@ export default function CanalComercialPage() {
               </div>
             </div>
 
-            {/* Datos del cliente */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
-              <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Cliente</p>
-              <p className="text-sm font-bold text-slate-900">{showVentaDetailModal.cliente_nombre || 'Cliente General'}</p>
-              <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
-                <p><span className="font-semibold">Doc:</span> {showVentaDetailModal.cliente_id}</p>
-                <p><span className="font-semibold">Tel:</span> —</p>
-              </div>
-            </div>
-
-            {/* Datos del vendedor y caja */}
+            {/* Datos del cliente y vendedor */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-white border border-slate-200 rounded-xl p-3">
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1">Cliente</p>
+                <p className="text-sm font-bold text-slate-900">{showVentaDetailModal.cliente_nombre || 'Cliente General'}</p>
+              </div>
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
                 <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1">Vendedor</p>
                 <p className="text-sm font-semibold text-slate-800">{showVentaDetailModal.vendedor_nombre || 'Vendedor'}</p>
               </div>
-              <div className="bg-white border border-slate-200 rounded-xl p-3">
-                <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1">Caja Turno</p>
-                <p className="text-xs font-mono text-slate-600">{showVentaDetailModal.caja_turno_id?.slice(0, 8)}...</p>
-              </div>
             </div>
 
-            {/* Tabla de productos */}
+            {/* Productos como tarjetas */}
             <div>
-              <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-2">Productos</p>
-              <div className="border border-slate-200 rounded-xl overflow-hidden">
-                <table className="w-full text-xs">
-                  <thead className="bg-slate-50">
-                    <tr className="text-slate-500">
-                      <th className="text-left px-3 py-2 font-semibold">SKU</th>
-                      <th className="text-left px-3 py-2 font-semibold">Producto</th>
-                      <th className="text-center px-3 py-2 font-semibold">Cant.</th>
-                      <th className="text-right px-3 py-2 font-semibold">P. Unit.</th>
-                      <th className="text-right px-3 py-2 font-semibold">Subtotal</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {(showVentaDetailModal.detalles ?? []).map((d, i) => (
-                      <tr key={i} className="hover:bg-slate-50/50">
-                        <td className="px-3 py-2 font-mono text-slate-500">{d.sku || '—'}</td>
-                        <td className="px-3 py-2 font-medium text-slate-800">{d.nombre || 'Producto'}</td>
-                        <td className="px-3 py-2 text-center font-mono text-slate-700">{d.cantidad}</td>
-                        <td className="px-3 py-2 text-right font-mono text-slate-700">S/ {d.precio_unitario.toFixed(2)}</td>
-                        <td className="px-3 py-2 text-right font-mono font-semibold text-slate-900">S/ {d.subtotal.toFixed(2)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-3">Productos</p>
+              <div className="space-y-3">
+                {(showVentaDetailModal.detalles ?? []).map((d, i) => (
+                  <div
+                    key={i}
+                    className="bg-white border border-slate-200 rounded-xl p-4 flex items-center justify-between gap-4 hover:bg-slate-50/50 transition-colors"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold text-slate-900 truncate">{d.nombre || 'Producto'}</p>
+                      <p className="text-[11px] font-mono text-slate-500 mt-0.5">SKU: {d.sku || '—'}</p>
+                    </div>
+                    <div className="text-center shrink-0 px-3">
+                      <p className="text-xs text-slate-400">Cant.</p>
+                      <p className="text-sm font-bold font-mono text-slate-800">{d.cantidad}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-xs text-slate-400">P. Unit.</p>
+                      <p className="text-sm font-mono text-slate-700">S/ {d.precio_unitario.toFixed(2)}</p>
+                    </div>
+                    <div className="text-right shrink-0 min-w-[80px]">
+                      <p className="text-xs text-slate-400">Subtotal</p>
+                      <p className="text-sm font-bold font-mono text-slate-900">S/ {d.subtotal.toFixed(2)}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -1273,13 +1264,6 @@ export default function CanalComercialPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 Descargar PDF
-              </GradientButton>
-              <GradientButton
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowVentaDetailModal(null)}
-              >
-                Cerrar
               </GradientButton>
             </div>
           </div>
