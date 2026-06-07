@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/fonts/geist-sans/geist-sans.css" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/fonts/geist-mono/geist-mono.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist+Sans:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #F8FAFC;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #E2E8F0;
+            border-radius: 10px;
+        }
+        .pulse-green {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-low": "#fff1eb",
+                        "outline": "#8c7164",
+                        "on-secondary-container": "#616363",
+                        "warning-yellow": "#F59E0B",
+                        "surface-card": "#FFFFFF",
+                        "error": "#ba1a1a",
+                        "brand-accent": "#FB923C",
+                        "surface-container-lowest": "#ffffff",
+                        "outline-variant": "#e0c0b1",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-container": "#003554",
+                        "surface-container": "#ffeae0",
+                        "tertiary-container": "#00a2f4",
+                        "surface-variant": "#f6ded3",
+                        "brand-hover": "#EA580C",
+                        "surface-base": "#F8FAFC",
+                        "on-error": "#ffffff",
+                        "on-tertiary-fixed": "#001d32",
+                        "primary-container": "#f97316",
+                        "on-error-container": "#93000a",
+                        "on-background": "#251913",
+                        "tertiary-fixed": "#cde5ff",
+                        "secondary": "#5d5f5f",
+                        "background": "#fff8f6",
+                        "on-tertiary-fixed-variant": "#004b74",
+                        "tertiary": "#006398",
+                        "on-primary-fixed": "#341100",
+                        "inverse-surface": "#3c2d26",
+                        "surface-container-high": "#fce3d9",
+                        "text-primary": "#0F172A",
+                        "surface-bright": "#fff8f6",
+                        "brand-amber": "#F59E0B",
+                        "on-primary-fixed-variant": "#783200",
+                        "surface": "#fff8f6",
+                        "inverse-on-surface": "#ffede6",
+                        "border-standard": "#E2E8F0",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#584237",
+                        "on-primary-container": "#582200",
+                        "text-muted": "#64748B",
+                        "secondary-fixed-dim": "#c6c6c7",
+                        "info-blue": "#3B82F6",
+                        "tertiary-fixed-dim": "#93ccff",
+                        "danger-red": "#EF4444",
+                        "on-surface": "#251913",
+                        "surface-elevated": "#F1F5F9",
+                        "inverse-primary": "#ffb690",
+                        "success-green": "#22C55E",
+                        "secondary-fixed": "#e2e2e2",
+                        "primary-fixed": "#ffdbca",
+                        "primary-fixed-dim": "#ffb690",
+                        "surface-tint": "#9d4300",
+                        "secondary-container": "#dfe0e0",
+                        "on-primary": "#ffffff",
+                        "primary": "#9d4300",
+                        "surface-dim": "#edd5cb",
+                        "surface-container-highest": "#f6ded3",
+                        "on-secondary-fixed": "#1a1c1c",
+                        "on-secondary-fixed-variant": "#454747"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.5rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "mono-code": ["Geist Mono"],
+                        "headline-4xl": ["Geist Sans"],
+                        "body-base": ["Geist Sans"],
+                        "label-sm": ["Geist Sans"],
+                        "headline-lg": ["Geist Sans"],
+                        "headline-2xl": ["Geist Sans"]
+                    },
+                    "fontSize": {
+                        "mono-code": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                        "headline-4xl": ["36px", {"lineHeight": "44px", "fontWeight": "700"}],
+                        "body-base": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-sm": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                        "headline-lg": ["18px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "headline-2xl": ["24px", {"lineHeight": "32px", "fontWeight": "700"}]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-surface-base font-body-base text-text-primary overflow-hidden h-screen flex flex-col">
+<!-- TopNavBar -->
+<header class="bg-surface-card h-16 border-b border-border-standard flex items-center justify-between px-6 z-30">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 bg-primary rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-[20px]" style="font-variation-settings: 'FILL' 1;">factory</span>
+</div>
+<span class="font-headline-lg text-primary tracking-tight">FADICC S.A.</span>
+</div>
+<div class="h-6 w-px bg-border-standard"></div>
+<h1 class="font-headline-lg text-text-primary">Canal Comercial</h1>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-3 px-4 py-1.5 bg-success-green/10 rounded-full border border-success-green/20">
+<div class="w-2 h-2 bg-success-green rounded-full pulse-green"></div>
+<span class="font-label-sm text-success-green font-bold uppercase tracking-wider">Caja Activa #04</span>
+</div>
+<button class="font-label-sm text-danger-red hover:bg-danger-red/5 px-4 py-2 rounded-lg transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">logout</span>
+                Cerrar Turno
+            </button>
+</div>
+</header>
+<main class="flex-1 flex overflow-hidden">
+<!-- Izquierda: Catálogo -->
+<section class="w-[70%] flex flex-col border-r border-border-standard">
+<!-- Search & Filter Bar -->
+<div class="p-6 bg-surface-card flex gap-4 items-center">
+<div class="relative flex-1">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">search</span>
+<input class="w-full pl-10 pr-4 py-2.5 bg-surface-base border border-border-standard rounded-lg focus:ring-2 focus:ring-primary-container focus:outline-none font-body-base transition-all" placeholder="Buscar por nombre o SKU..." type="text"/>
+</div>
+<div class="flex gap-2">
+<button class="px-4 py-2.5 bg-surface-base border border-border-standard rounded-lg font-label-sm text-text-primary flex items-center gap-2 hover:bg-slate-100">
+<span class="material-symbols-outlined text-[20px]">filter_list</span>
+                        Filtros
+                    </button>
+<button class="px-4 py-2.5 bg-surface-base border border-border-standard rounded-lg font-label-sm text-text-primary flex items-center gap-2 hover:bg-slate-100">
+<span class="material-symbols-outlined text-[20px]">sort</span>
+                        Ordenar
+                    </button>
+</div>
+</div>
+<!-- Product Grid -->
+<div class="flex-1 overflow-y-auto p-6 custom-scrollbar">
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+<!-- Product Card 1 -->
+<div class="bg-surface-card border border-border-standard rounded-xl p-4 flex flex-col gap-4 group hover:shadow-sm transition-all relative overflow-hidden">
+<div class="absolute top-0 left-0 w-full h-1 bg-primary transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
+<img class="w-full h-48 object-cover rounded-lg" data-alt="A professional-grade stainless steel industrial kitchen range with multiple high-output burners and iron grates. The setting is a brightly lit, clean modern manufacturing showroom with soft daylighting and a high-contrast industrial light theme. The aesthetic is clean, technical, and high-efficiency with neutral Slate-50 background and subtle warm orange highlights." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDbgv34qWavfhp87enRAMcKAqMa-zTBGXo9HRM6o4wNIClgYK9s0xx-rTkJ9CA04xStC82i4X4ZDekO060gNjgl5_Pd8wZl3-si08tG70bYt3GFF6V9K-dEvqR6G3YMznm35KJkWztKAnJZBvsvX2yf8OxRm4OV7YdrTp5Ro7UF2JvOKrzyHeHT7OQcC7o6AcNttb48SC4vz6quBeDFhnbSbpM799w3wXWIXsmJZW5fuqc0LxgLmMObUZ3hKMOEed2k9s6q8sdaMHz9"/>
+<div class="flex flex-col gap-1">
+<span class="font-mono-code text-text-muted text-[11px] uppercase tracking-wider">SKU-IND-402</span>
+<h3 class="font-headline-lg text-text-primary leading-tight h-14 overflow-hidden">Cocina Industrial 4 Hornillas Premium</h3>
+</div>
+<div class="flex items-center justify-between">
+<span class="px-2 py-1 bg-success-green/10 text-success-green font-label-sm rounded uppercase text-[10px] font-bold">Disponible</span>
+<span class="font-headline-2xl text-primary">S/ 2,450.00</span>
+</div>
+<button class="w-full py-2.5 bg-primary-container text-white font-label-sm rounded-lg flex items-center justify-center gap-2 hover:bg-brand-hover transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[20px]">add</span>
+                            Agregar
+                        </button>
+</div>
+<!-- Product Card 2 -->
+<div class="bg-surface-card border border-border-standard rounded-xl p-4 flex flex-col gap-4 group hover:shadow-sm transition-all relative overflow-hidden">
+<img class="w-full h-48 object-cover rounded-lg" data-alt="A modern domestic kitchen countertop featuring a built-in black glass induction cooktop. The surrounding environment is a minimalist white and light-gray kitchen with elegant finishes and high-key studio lighting. The visual style is premium and corporate, aligning with an industrial light theme that uses white and slate tones with precise orange detailing." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJYIDB43z2zGW6SPiAzsXiVbXr5csiCJGD8iB7HJIZkz5fZV3A63wodikbrbd9gdIY_iByX13ZObD8kuxZBgbeH3GrHBsnOyDt-wxJSS9oLt0U_yBZHANMLX_uf2Cajvj0uFdZxHiM7T__iWsBBK8y0lzHOaoX8geqx_iFMPClULlcdP0wwkeclhg96MZUq_AqZFFpDSX2ygCeJ6eCXgDO1utHfFHv_M2ivuuoYDnQ3_9_mP658OYSGkCbR4AfwVoRPrvXf7NOd0_s"/>
+<div class="flex flex-col gap-1">
+<span class="font-mono-code text-text-muted text-[11px] uppercase tracking-wider">SKU-DOM-105</span>
+<h3 class="font-headline-lg text-text-primary leading-tight h-14 overflow-hidden">Encimera de Vitrocerámica 4 Quemadores</h3>
+</div>
+<div class="flex items-center justify-between">
+<span class="px-2 py-1 bg-brand-amber/10 text-brand-amber font-label-sm rounded uppercase text-[10px] font-bold">Bajo Stock</span>
+<span class="font-headline-2xl text-primary">S/ 890.00</span>
+</div>
+<button class="w-full py-2.5 bg-primary-container text-white font-label-sm rounded-lg flex items-center justify-center gap-2 hover:bg-brand-hover transition-colors">
+<span class="material-symbols-outlined text-[20px]">add</span>
+                            Agregar
+                        </button>
+</div>
+<!-- Product Card 3 -->
+<div class="bg-surface-card border border-border-standard rounded-xl p-4 flex flex-col gap-4 group hover:shadow-sm transition-all relative overflow-hidden">
+<img class="w-full h-48 object-cover rounded-lg" data-alt="A heavy-duty industrial oven with digital controls and a robust stainless steel exterior. The appliance is showcased in a high-productivity factory setting with soft directional lighting that emphasizes the metallic textures. The overall mood is professional and efficient, using the FADICC brand colors of slate white and orange accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCCRMxq50INRjBgLO41K2DDFzSotleMHovMvD78UAyHSTrRkvcvBQx3s1EfLvIMnZPouKtiTnNrV_9oHtPfQRUikhabyU3fl7Dk4l6HWIXIs1U_VMkIcPTknsx4OMFzA2tsjP_c8PFmw3SRSlCp1hLg5Nr6fE-2HowvhHPN__tTEv9FGrcjlg6B0mevg1iWlz6o6tf4QjsgqwnOqURfM8E7-gpF1PFD_xvWlBQUozBUVm6wWe-0384m1Qg2YBOUuL7CUu13HhSxVWuT"/>
+<div class="flex flex-col gap-1">
+<span class="font-mono-code text-text-muted text-[11px] uppercase tracking-wider">SKU-IND-908</span>
+<h3 class="font-headline-lg text-text-primary leading-tight h-14 overflow-hidden">Horno Convector Industrial XL</h3>
+</div>
+<div class="flex items-center justify-between">
+<span class="px-2 py-1 bg-danger-red/10 text-danger-red font-label-sm rounded uppercase text-[10px] font-bold">Sin Stock</span>
+<span class="font-headline-2xl text-primary">S/ 4,200.00</span>
+</div>
+<button class="w-full py-2.5 bg-slate-200 text-slate-400 font-label-sm rounded-lg flex items-center justify-center gap-2 cursor-not-allowed" disabled="">
+<span class="material-symbols-outlined text-[20px]">block</span>
+                            Sin Stock
+                        </button>
+</div>
+<!-- Product Card 4 -->
+<div class="bg-surface-card border border-border-standard rounded-xl p-4 flex flex-col gap-4 group hover:shadow-sm transition-all relative overflow-hidden">
+<img class="w-full h-48 object-cover rounded-lg" data-alt="A close-up view of a high-end domestic range cooker with a polished finish and elegant control knobs. The scene is set in a contemporary residential kitchen with bright, warm morning light reflecting off the metallic surfaces. The color palette is dominated by clean whites and slates with subtle vibrant orange highlights for key interactive elements." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDXuxxp7h0i7Y5ZU7bU2Gy1YstPfpeAT92XmwNQSP2wx473REudSRdzP0U3ySvi-SdzXekatrBHtqHb4SgOt2nxHLq1mGgqF9U7vjd5LDAMoRRdj2Hpz82VVUFG9GwhdaGibi_w4XH7wikbKzLXBUH3Oy3KYClFJMDaLVRaudQ3vk_qzqKlRzrN2MRidkTRV6K88RrQydpE1ZUGRcNbPy93W3SHcm6yEGhBfePwcJW2TFE4i9GXLCD3eFAObpSeUHo9aVRsoUwAfTRb"/>
+<div class="flex flex-col gap-1">
+<span class="font-mono-code text-text-muted text-[11px] uppercase tracking-wider">SKU-DOM-212</span>
+<h3 class="font-headline-lg text-text-primary leading-tight h-14 overflow-hidden">Cocina Doméstica Inoxidable 5H</h3>
+</div>
+<div class="flex items-center justify-between">
+<span class="px-2 py-1 bg-success-green/10 text-success-green font-label-sm rounded uppercase text-[10px] font-bold">Disponible</span>
+<span class="font-headline-2xl text-primary">S/ 1,550.00</span>
+</div>
+<button class="w-full py-2.5 bg-primary-container text-white font-label-sm rounded-lg flex items-center justify-center gap-2 hover:bg-brand-hover transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[20px]">add</span>
+                            Agregar
+                        </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Derecha: Panel de Venta -->
+<aside class="w-[30%] bg-surface-card flex flex-col">
+<!-- Tabs -->
+<div class="flex border-b border-border-standard">
+<button class="flex-1 py-4 font-label-sm text-primary border-b-2 border-primary bg-primary/5">
+                    Carrito (3)
+                </button>
+<button class="flex-1 py-4 font-label-sm text-text-muted hover:text-text-primary transition-colors">
+                    Historial
+                </button>
+</div>
+<!-- Customer Search -->
+<div class="p-4 flex flex-col gap-4 border-b border-border-standard">
+<div class="flex gap-2">
+<div class="relative flex-1">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-[20px]">person_search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-base border border-border-standard rounded-lg font-label-sm focus:ring-1 focus:ring-primary focus:outline-none" placeholder="Buscador por DNI/RUC..." type="text"/>
+</div>
+<button class="w-10 h-10 flex items-center justify-center bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors">
+<span class="material-symbols-outlined">person_add</span>
+</button>
+</div>
+<div class="flex items-center justify-between p-2 bg-slate-50 rounded-lg">
+<span class="font-label-sm text-text-muted">Tipo Comprobante</span>
+<div class="flex bg-white p-1 rounded-md border border-border-standard">
+<button class="px-3 py-1 font-label-sm bg-primary text-white rounded shadow-sm">Boleta</button>
+<button class="px-3 py-1 font-label-sm text-text-muted hover:bg-slate-50 rounded">Factura</button>
+</div>
+</div>
+</div>
+<!-- Cart Items -->
+<div class="flex-1 overflow-y-auto p-4 flex flex-col gap-3 custom-scrollbar">
+<!-- Cart Item 1 -->
+<div class="flex gap-3 p-3 bg-surface-base rounded-xl border border-border-standard group">
+<img class="w-16 h-16 object-cover rounded-lg" data-alt="Industrial kitchen stove thumbnail." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCgUQJDvFeJuljbN7ONU-kTiquB_RyA6dHghy-c71zCCbymyUVPKxf8tapoBiHYt21pyIbRMK16p_e0dhPxZc0zi4-p_kPtpMlbsNfkX-p_cBm5PFEZOjdH64Jc9YUXkVr2uHa6D1UPKRLEe8nPaRVdZuj7bp9iib_ctBUUotpT8tr_pbe2mwXJZw0X3voxlaij1SD8pHR45cnD_-SMv22QRyAVKgEhkjuTEQLGW_bVwnokl_UJ92x3W2_aM4-F0lo3dINwGhQE5NUq"/>
+<div class="flex-1 flex flex-col justify-between py-0.5">
+<div class="flex justify-between items-start">
+<h4 class="font-label-sm text-text-primary leading-tight">Cocina Industrial 4H</h4>
+<button class="text-text-muted hover:text-danger-red transition-colors">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-3 bg-white border border-border-standard rounded-full px-2 py-0.5">
+<button class="w-6 h-6 flex items-center justify-center text-text-muted hover:text-primary">-</button>
+<span class="font-label-sm font-bold min-w-[20px] text-center">1</span>
+<button class="w-6 h-6 flex items-center justify-center text-text-muted hover:text-primary">+</button>
+</div>
+<span class="font-label-sm font-bold text-text-primary">S/ 2,450.00</span>
+</div>
+</div>
+</div>
+<!-- Cart Item 2 -->
+<div class="flex gap-3 p-3 bg-surface-base rounded-xl border border-border-standard group">
+<img class="w-16 h-16 object-cover rounded-lg" data-alt="Glass cooktop thumbnail." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAinudDsM9r8Ha0HAZJYbKcS1m4kVxfFFENkn-jr_6eGlpejTcFxcXriHx1of66x2Z_PG5-psDGfobO4Ykq_1wioYzsxIfGJP2WtB3V7f4lCJVBVGTnCoKa-b4rtrg9l12cual5k7-SyH238lxEfw41piiZmae_xoYCpnzN7Gofw_OByBn68jpiyun3SVk7Ow8Tu4jEPB-Hbko0244ml9i07Fy528nEBjoS6X6yz6_gvRhlXpQli9Igd34Znf7KJrMq_mybUBnDg3uM"/>
+<div class="flex-1 flex flex-col justify-between py-0.5">
+<div class="flex justify-between items-start">
+<h4 class="font-label-sm text-text-primary leading-tight">Encimera Vitrocerámica</h4>
+<button class="text-text-muted hover:text-danger-red transition-colors">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-3 bg-white border border-border-standard rounded-full px-2 py-0.5">
+<button class="w-6 h-6 flex items-center justify-center text-text-muted hover:text-primary">-</button>
+<span class="font-label-sm font-bold min-w-[20px] text-center">2</span>
+<button class="w-6 h-6 flex items-center justify-center text-text-muted hover:text-primary">+</button>
+</div>
+<span class="font-label-sm font-bold text-text-primary">S/ 1,780.00</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Summary -->
+<div class="p-6 bg-slate-900 text-white rounded-t-3xl shadow-2xl">
+<div class="flex flex-col gap-2 mb-6">
+<div class="flex justify-between font-label-sm text-slate-400">
+<span>Subtotal</span>
+<span>S/ 3,584.75</span>
+</div>
+<div class="flex justify-between font-label-sm text-slate-400">
+<span>IGV (18%)</span>
+<span>S/ 645.25</span>
+</div>
+<div class="h-px bg-slate-800 my-2"></div>
+<div class="flex justify-between items-baseline">
+<span class="font-headline-lg font-bold">TOTAL</span>
+<span class="font-headline-4xl text-primary-container">S/ 4,230.00</span>
+</div>
+</div>
+<button class="w-full py-4 bg-primary-container hover:bg-brand-hover text-white font-headline-lg rounded-xl flex items-center justify-center gap-3 transition-all active:scale-[0.98]">
+<span class="material-symbols-outlined text-[24px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                    Confirmar Venta
+                </button>
+</div>
+</aside>
+</main>
+<script>
+        // Simple micro-interaction for adding animation effects
+        document.querySelectorAll('button').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const rect = button.getBoundingClientRect();
+                const ripple = document.createElement('span');
+                const size = Math.max(rect.width, rect.height);
+                const x = e.clientX - rect.left - size / 2;
+                const y = e.clientY - rect.top - size / 2;
+                
+                ripple.style.width = ripple.style.height = `${size}px`;
+                ripple.style.left = `${x}px`;
+                ripple.style.top = `${y}px`;
+                ripple.classList.add('absolute', 'bg-white/20', 'rounded-full', 'animate-ping', 'pointer-events-none');
+                
+                button.classList.add('relative', 'overflow-hidden');
+                button.appendChild(ripple);
+                
+                setTimeout(() => ripple.remove(), 600);
+            });
+        });
+    </script>
+</body></html>

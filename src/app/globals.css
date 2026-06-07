@@ -1,0 +1,202 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+html {
+  font-size: 14px;
+  scroll-behavior: smooth;
+}
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+}
+
+@theme {
+  --font-sans: "Geist", var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Playfair Display", Georgia, "Times New Roman", serif;
+  --font-mono: "Geist Mono", var(--font-geist-mono), ui-monospace, monospace;
+
+  /* Brand Gradients */
+  --color-primary: #f97316;
+  --color-brand-hover: #ea580c;
+  --color-brand-accent: #fb923c;
+  --color-brand-amber: #f59e0b;
+  --color-brand-light: #fff7ed;
+
+  /* Surface — Claro Premium */
+  --color-surface-base: #f8fafc;
+  --color-surface-card: #ffffff;
+  --color-surface-elevated: #f1f5f9;
+  --color-text-primary: #0f172a;
+  --color-text-muted: #64748b;
+  --color-border-standard: #e2e8f0;
+
+  /* Semantic */
+  --color-success-green: #22c55e;
+  --color-danger-red: #ef4444;
+  --color-warning-yellow: #f59e0b;
+  --color-info-blue: #3b82f6;
+
+  /* Stitch Design System */
+  --color-surface: #fff8f6;
+  --color-surface-dim: #edd5cb;
+  --color-surface-bright: #fff8f6;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #fff1eb;
+  --color-surface-container: #ffeae0;
+  --color-surface-container-high: #fce3d9;
+  --color-surface-container-highest: #f6ded3;
+  --color-on-surface: #251913;
+  --color-on-surface-variant: #584237;
+  --color-inverse-surface: #3c2d26;
+  --color-inverse-on-surface: #ffede6;
+  --color-outline: #8c7164;
+  --color-outline-variant: #e0c0b1;
+  --color-surface-tint: #f97316;
+  --color-primary-container: #ffdbca;
+  --color-on-primary-container: #582200;
+  --color-inverse-primary: #ffb690;
+  --color-secondary: #5d5f5f;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #dfe0e0;
+  --color-on-secondary-container: #616363;
+  --color-tertiary: #006398;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #00a2f4;
+  --color-on-tertiary-container: #003554;
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+
+  /* Spacing */
+  --spacing-layout-margin: 2rem;
+  --spacing-sidebar-width: 256px;
+  --spacing-base-unit: 4px;
+  --spacing-gap-lg: 1.5rem;
+  --spacing-gap-md: 1rem;
+  --spacing-gap-xs: 0.75rem;
+
+  /* Radii */
+  --radius-sm: 0.25rem;
+  --radius-default: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+}
+
+/* Base Body */
+body {
+  background: radial-gradient(ellipse at 20% 0%, #fff7ed 0%, #ffffff 40%, #f8fafc 100%);
+  background-attachment: fixed;
+  color: var(--color-text-primary);
+  font-family: "Geist", var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Global Transitions */
+* {
+  transition-property: color, background-color, border-color, opacity, transform, box-shadow;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Typography Utilities */
+@utility font-headline-4xl {
+  font-family: "Geist", var(--font-geist-sans), ui-sans-serif, sans-serif;
+  font-weight: 700;
+}
+@utility text-headline-4xl {
+  font-size: 36px;
+  line-height: 44px;
+}
+
+@utility font-headline-2xl {
+  font-family: "Geist", var(--font-geist-sans), ui-sans-serif, sans-serif;
+  font-weight: 700;
+}
+@utility text-headline-2xl {
+  font-size: 24px;
+  line-height: 32px;
+}
+
+@utility font-headline-lg {
+  font-family: "Geist", var(--font-geist-sans), ui-sans-serif, sans-serif;
+  font-weight: 600;
+}
+@utility text-headline-lg {
+  font-size: 18px;
+  line-height: 28px;
+}
+
+@utility font-body-base {
+  font-family: "Geist", var(--font-geist-sans), ui-sans-serif, sans-serif;
+  font-weight: 400;
+}
+@utility text-body-base {
+  font-size: 16px;
+  line-height: 24px;
+}
+
+@utility font-label-sm {
+  font-family: "Geist", var(--font-geist-sans), ui-sans-serif, sans-serif;
+  font-weight: 500;
+}
+@utility text-label-sm {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+@utility font-mono-code {
+  font-family: "Geist Mono", var(--font-geist-mono), ui-monospace, monospace;
+  font-weight: 400;
+}
+@utility text-mono-code {
+  font-size: 12px;
+  line-height: 16px;
+}
+
+/* Animation Utilities */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+@utility animate-shake {
+  animation: shake 0.4s ease-in-out;
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@utility animate-fade-in-up {
+  animation: fade-in-up 0.5s ease-out forwards;
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@utility animate-scale-in {
+  animation: scale-in 0.2s ease-out forwards;
+}

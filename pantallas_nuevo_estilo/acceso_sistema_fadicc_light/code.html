@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FADICC S.A. | Login</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;family=Geist+Mono:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "warning-yellow": "#F59E0B",
+                "surface-container-low": "#fff1eb",
+                "outline-variant": "#e0c0b1",
+                "surface-dim": "#edd5cb",
+                "on-tertiary": "#ffffff",
+                "text-muted": "#64748B",
+                "background": "#fff8f6",
+                "primary-fixed-dim": "#ffb690",
+                "inverse-surface": "#3c2d26",
+                "secondary-container": "#dfe0e0",
+                "surface-base": "#F8FAFC",
+                "on-secondary": "#ffffff",
+                "brand-hover": "#EA580C",
+                "primary-container": "#f97316",
+                "tertiary": "#006398",
+                "outline": "#8c7164",
+                "on-tertiary-container": "#003554",
+                "secondary-fixed": "#e2e2e2",
+                "surface-container-lowest": "#ffffff",
+                "on-primary-fixed-variant": "#783200",
+                "tertiary-fixed-dim": "#93ccff",
+                "error-container": "#ffdad6",
+                "primary": "#9d4300",
+                "primary-fixed": "#ffdbca",
+                "on-primary": "#ffffff",
+                "error": "#ba1a1a",
+                "danger-red": "#EF4444",
+                "on-secondary-fixed": "#1a1c1c",
+                "surface-container-high": "#fce3d9",
+                "surface-elevated": "#F1F5F9",
+                "text-primary": "#0F172A",
+                "on-tertiary-fixed-variant": "#004b74",
+                "on-primary-fixed": "#341100",
+                "inverse-primary": "#ffb690",
+                "tertiary-fixed": "#cde5ff",
+                "on-tertiary-fixed": "#001d32",
+                "on-error-container": "#93000a",
+                "surface": "#fff8f6",
+                "success-green": "#22C55E",
+                "on-secondary-fixed-variant": "#454747",
+                "surface-container": "#ffeae0",
+                "on-primary-container": "#582200",
+                "info-blue": "#3B82F6",
+                "inverse-on-surface": "#ffede6",
+                "on-surface-variant": "#584237",
+                "surface-card": "#FFFFFF",
+                "on-surface": "#251913",
+                "surface-tint": "#9d4300",
+                "on-secondary-container": "#616363",
+                "tertiary-container": "#00a2f4",
+                "on-error": "#ffffff",
+                "brand-accent": "#FB923C",
+                "surface-container-highest": "#f6ded3",
+                "brand-amber": "#F59E0B",
+                "secondary": "#5d5f5f",
+                "border-standard": "#E2E8F0",
+                "surface-bright": "#fff8f6",
+                "surface-variant": "#f6ded3",
+                "secondary-fixed-dim": "#c6c6c7",
+                "on-background": "#251913"
+            },
+            "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+            },
+            "spacing": {
+                "sidebar-width": "256px",
+                "gap-md": "1rem",
+                "layout-margin": "2rem",
+                "gap-lg": "1.5rem",
+                "base-unit": "4px",
+                "gap-xs": "0.75rem"
+            },
+            "fontFamily": {
+                "headline-4xl": ["Geist Sans"],
+                "label-sm": ["Geist Sans"],
+                "headline-lg": ["Geist Sans"],
+                "headline-2xl": ["Geist Sans"],
+                "body-base": ["Geist Sans"],
+                "mono-code": ["Geist Mono"]
+            },
+            "fontSize": {
+                "headline-4xl": ["36px", {"lineHeight": "44px", "fontWeight": "700"}],
+                "label-sm": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                "headline-lg": ["18px", {"lineHeight": "28px", "fontWeight": "600"}],
+                "headline-2xl": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                "body-base": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                "mono-code": ["12px", {"lineHeight": "16px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Geist Sans', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .login-gradient {
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.08) 0%, rgba(249, 115, 22, 0.03) 100%);
+        }
+        .feature-item:hover {
+            transform: translateX(8px);
+        }
+        details > summary { list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
+    </style>
+</head>
+<body class="bg-surface-base text-on-surface min-h-screen flex overflow-hidden">
+<!-- Left Decorative Side -->
+<aside class="hidden lg:flex w-1/2 relative flex-col justify-between p-16 login-gradient border-r border-border-standard overflow-hidden">
+<!-- Background Accents -->
+<div class="absolute -top-24 -left-24 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
+<div class="absolute -bottom-24 -right-24 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
+<div class="relative z-10 space-y-12">
+<!-- Logo Section -->
+<div class="space-y-4">
+<img alt="FADICC S.A. Logo" class="h-16 w-auto" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzP4Yjjom57OWakLBB4w_cpfjmQwrQ309q9wMPI9Uws8I9noBzecskW6eY6zhXQnPAaIF-J2gw9UgxTWimtjrNzP2mszTARtPM4dN-LVmc4dInIaYeKq1pw-SAJ2iEgmz_xrtdCSyLTuZDnF8lvfVbs4qv6dZQHtNccVUVcftwuGvVnSq4QVh_gCUmVYpR3rOfjlFcjajdfdRPQINiV78-a7SJrdnMjME885tfzkCc7mmA0ae33caceTON4kV0NPCZNyyqaEBCFiiC"/>
+<div>
+<h1 class="font-headline-4xl text-headline-4xl text-primary tracking-tight">FADICC S.A.</h1>
+<p class="font-headline-lg text-headline-lg text-on-surface-variant/80">Sistema ERP Centralizado</p>
+</div>
+</div>
+<!-- Features List -->
+<nav class="space-y-6">
+<div class="feature-item flex items-center gap-4 transition-all duration-300">
+<div class="w-12 h-12 rounded-xl bg-white border border-border-standard flex items-center justify-center text-primary shadow-sm">
+<span class="material-symbols-outlined" data-icon="storefront">storefront</span>
+</div>
+<div>
+<p class="font-headline-lg text-headline-lg text-text-primary">Canal Comercial</p>
+<p class="font-label-sm text-label-sm text-text-muted">Gestión de puntos de venta y retail.</p>
+</div>
+</div>
+<div class="feature-item flex items-center gap-4 transition-all duration-300">
+<div class="w-12 h-12 rounded-xl bg-white border border-border-standard flex items-center justify-center text-primary shadow-sm">
+<span class="material-symbols-outlined" data-icon="factory">factory</span>
+</div>
+<div>
+<p class="font-headline-lg text-headline-lg text-text-primary">Canal Industrial</p>
+<p class="font-label-sm text-label-sm text-text-muted">Operaciones a gran escala y contratos.</p>
+</div>
+</div>
+<div class="feature-item flex items-center gap-4 transition-all duration-300">
+<div class="w-12 h-12 rounded-xl bg-white border border-border-standard flex items-center justify-center text-primary shadow-sm">
+<span class="material-symbols-outlined" data-icon="local_shipping">local_shipping</span>
+</div>
+<div>
+<p class="font-headline-lg text-headline-lg text-text-primary">Planta y Despachos</p>
+<p class="font-label-sm text-label-sm text-text-muted">Control de producción y logística de salida.</p>
+</div>
+</div>
+<div class="feature-item flex items-center gap-4 transition-all duration-300">
+<div class="w-12 h-12 rounded-xl bg-white border border-border-standard flex items-center justify-center text-primary shadow-sm">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+</div>
+<div>
+<p class="font-headline-lg text-headline-lg text-text-primary">Inventario</p>
+<p class="font-label-sm text-label-sm text-text-muted">Seguimiento de materia prima y stock real.</p>
+</div>
+</div>
+</nav>
+</div>
+<!-- Footer Info -->
+<div class="relative z-10 flex items-center gap-2 text-text-muted">
+<span class="material-symbols-outlined text-[20px]" data-icon="verified_user">verified_user</span>
+<span class="font-label-sm text-label-sm">Certificado de Seguridad Industrial v4.2</span>
+</div>
+</aside>
+<!-- Right Form Side -->
+<main class="w-full lg:w-1/2 flex items-center justify-center p-6 bg-white overflow-y-auto">
+<div class="w-full max-w-md space-y-10 py-12">
+<!-- Header Mobile Only -->
+<div class="lg:hidden text-center space-y-4 mb-8">
+<img alt="FADICC Logo" class="h-12 w-auto mx-auto" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzP4Yjjom57OWakLBB4w_cpfjmQwrQ309q9wMPI9Uws8I9noBzecskW6eY6zhXQnPAaIF-J2gw9UgxTWimtjrNzP2mszTARtPM4dN-LVmc4dInIaYeKq1pw-SAJ2iEgmz_xrtdCSyLTuZDnF8lvfVbs4qv6dZQHtNccVUVcftwuGvVnSq4QVh_gCUmVYpR3rOfjlFcjajdfdRPQINiV78-a7SJrdnMjME885tfzkCc7mmA0ae33caceTON4kV0NPCZNyyqaEBCFiiC"/>
+<h1 class="font-headline-2xl text-headline-2xl text-primary">FADICC S.A.</h1>
+</div>
+<!-- Welcome Text -->
+<header class="space-y-2">
+<h2 class="font-headline-4xl text-headline-4xl text-text-primary">Bienvenido de vuelta</h2>
+<p class="font-body-base text-body-base text-text-muted">Ingresa tus credenciales para continuar</p>
+</header>
+<!-- Login Form -->
+<form class="space-y-6" onsubmit="event.preventDefault();">
+<div class="space-y-4">
+<!-- Email Field -->
+<div class="space-y-2">
+<label class="block font-label-sm text-label-sm text-on-surface-variant" for="email">Correo Electrónico</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" data-icon="mail">mail</span>
+<input class="w-full pl-12 pr-4 py-3 bg-white border border-border-standard rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none font-body-base text-body-base" id="email" placeholder="nombre@fadicc.com" type="email"/>
+</div>
+</div>
+<!-- Password Field -->
+<div class="space-y-2">
+<div class="flex justify-between">
+<label class="block font-label-sm text-label-sm text-on-surface-variant" for="password">Contraseña</label>
+<a class="font-label-sm text-label-sm text-primary hover:text-brand-hover transition-colors" href="#">¿Olvidaste tu contraseña?</a>
+</div>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" data-icon="lock">lock</span>
+<input class="w-full pl-12 pr-12 py-3 bg-white border border-border-standard rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none font-body-base text-body-base" id="password" placeholder="••••••••" type="password"/>
+<button class="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors" onclick="togglePasswordVisibility()" type="button">
+<span class="material-symbols-outlined" data-icon="visibility" id="eye-icon">visibility</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Remember Me -->
+<div class="flex items-center gap-3">
+<input class="w-4 h-4 text-primary border-border-standard rounded focus:ring-primary" id="remember" type="checkbox"/>
+<label class="font-label-sm text-label-sm text-text-muted select-none" for="remember">Recordar sesión por 30 días</label>
+</div>
+<!-- Action Button -->
+<button class="w-full bg-primary-container hover:bg-brand-hover text-white font-headline-lg text-headline-lg py-4 rounded-xl shadow-lg shadow-primary/20 transform active:scale-[0.98] transition-all duration-200" type="submit">
+                    Iniciar Sesión
+                </button>
+</form>
+<!-- Test Accounts Accordion -->
+<details class="group bg-surface-elevated rounded-xl border border-border-standard overflow-hidden transition-all duration-300">
+<summary class="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-100 transition-colors">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" data-icon="experimental">experiment</span>
+<span class="font-label-sm text-label-sm text-text-primary font-bold">Cuentas de prueba</span>
+</div>
+<span class="material-symbols-outlined transition-transform duration-300 group-open:rotate-180 text-text-muted" data-icon="expand_more">expand_more</span>
+</summary>
+<div class="p-4 pt-0 grid grid-cols-1 gap-2">
+<button class="flex items-center justify-between w-full p-3 text-left bg-white border border-border-standard rounded-lg hover:border-primary hover:bg-primary/5 transition-all" onclick="fillLogin('admin@fadicc.com')">
+<span class="font-label-sm text-label-sm">Administrador</span>
+<span class="font-mono-code text-mono-code text-text-muted">admin@fadicc.com</span>
+</button>
+<button class="flex items-center justify-between w-full p-3 text-left bg-white border border-border-standard rounded-lg hover:border-primary hover:bg-primary/5 transition-all" onclick="fillLogin('vendedor@fadicc.com')">
+<span class="font-label-sm text-label-sm">Ventas Comercial</span>
+<span class="font-mono-code text-mono-code text-text-muted">vendedor@fadicc.com</span>
+</button>
+<button class="flex items-center justify-between w-full p-3 text-left bg-white border border-border-standard rounded-lg hover:border-primary hover:bg-primary/5 transition-all" onclick="fillLogin('representante@fadicc.com')">
+<span class="font-label-sm text-label-sm">Ventas Industrial</span>
+<span class="font-mono-code text-mono-code text-text-muted">representante@fadicc.com</span>
+</button>
+<button class="flex items-center justify-between w-full p-3 text-left bg-white border border-border-standard rounded-lg hover:border-primary hover:bg-primary/5 transition-all" onclick="fillLogin('produccion@fadicc.com')">
+<span class="font-label-sm text-label-sm">Jefe de Planta</span>
+<span class="font-mono-code text-mono-code text-text-muted">produccion@fadicc.com</span>
+</button>
+<button class="flex items-center justify-between w-full p-3 text-left bg-white border border-border-standard rounded-lg hover:border-primary hover:bg-primary/5 transition-all" onclick="fillLogin('almacen@fadicc.com')">
+<span class="font-label-sm text-label-sm">Almacén y Despacho</span>
+<span class="font-mono-code text-mono-code text-text-muted">almacen@fadicc.com</span>
+</button>
+</div>
+</details>
+<!-- Copyright and Footer -->
+<footer class="text-center space-y-4 pt-4 border-t border-slate-100">
+<p class="font-label-sm text-label-sm text-text-muted">
+                    © 2024 FADICC S.A. Todos los derechos reservados.
+                </p>
+<div class="flex items-center justify-center gap-4">
+<a class="font-label-sm text-label-sm text-text-muted hover:text-primary underline" href="#">Políticas de Privacidad</a>
+<div class="w-1 h-1 rounded-full bg-slate-300"></div>
+<a class="font-label-sm text-label-sm text-text-muted hover:text-primary underline" href="#">Soporte IT</a>
+</div>
+</footer>
+</div>
+</main>
+<script>
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('password');
+            const eyeIcon = document.getElementById('eye-icon');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.textContent = 'visibility_off';
+            } else {
+                passwordInput.type = 'password';
+                eyeIcon.textContent = 'visibility';
+            }
+        }
+
+        function fillLogin(email) {
+            document.getElementById('email').value = email;
+            document.getElementById('password').value = 'password123'; // Placeholder password
+            
+            // Add focus animation feedback
+            const emailInput = document.getElementById('email');
+            emailInput.classList.add('ring-2', 'ring-primary/20', 'border-primary');
+            setTimeout(() => {
+                emailInput.classList.remove('ring-2', 'ring-primary/20', 'border-primary');
+            }, 800);
+        }
+
+        // Add a subtle parallax effect to the left background
+        document.addEventListener('mousemove', (e) => {
+            const moveX = (e.clientX - window.innerWidth / 2) * 0.01;
+            const moveY = (e.clientY - window.innerHeight / 2) * 0.01;
+            const accents = document.querySelectorAll('.blur-3xl');
+            accents.forEach((accent, index) => {
+                const multiplier = index === 0 ? 1 : -1;
+                accent.style.transform = `translate(${moveX * multiplier}px, ${moveY * multiplier}px)`;
+            });
+        });
+    </script>
+</body></html>
