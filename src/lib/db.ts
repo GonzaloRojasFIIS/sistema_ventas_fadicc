@@ -615,6 +615,38 @@ export const dbService = {
     return cajaId ? ventas.filter(v => v.caja_turno_id === cajaId).slice(0, limit) : ventas.slice(0, limit);
   },
 
+  async getVentaById(id: string): Promise<VentaComercial | null> {
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('ventas_comerciales')
+        .select(`
+          *,
+          clientes(razon_social_o_nombre),
+          usuarios(nombre),
+          venta_detalles(productos(nombre, sku), cantidad, precio_unitario, subtotal)
+        `)
+        .eq('id', id)
+        .single();
+
+      if (!error && data) {
+        return {
+          ...data,
+          cliente_nombre: data.clientes?.razon_social_o_nombre,
+          vendedor_nombre: data.usuarios?.nombre,
+          detalles: (data.venta_detalles || []).map((d: any) => ({
+            nombre: d.productos?.nombre,
+            sku: d.productos?.sku,
+            cantidad: d.cantidad,
+            precio_unitario: d.precio_unitario,
+            subtotal: d.subtotal,
+          })),
+        };
+      }
+    }
+    const ventas = getLocalData<VentaComercial[]>('fadicc_ventas', []);
+    return ventas.find(v => v.id === id) || null;
+  },
+
   // --- PROFORMAS ---
   async getProformas(): Promise<Proforma[]> {
     if (supabase) {

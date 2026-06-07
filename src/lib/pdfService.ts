@@ -34,32 +34,48 @@ interface ProformaPdfData {
   }[];
 }
 
-function addLogoAndHeader(doc: jsPDF, titulo: string, fecha: string) {
-  // Logo placeholder (texto grande como logo)
-  doc.setFontSize(20);
+function addLogo(doc: jsPDF, x: number, y: number) {
+  // Logo cuadrado naranja
+  doc.setFillColor(249, 115, 22); // orange-500
+  doc.roundedRect(x, y, 14, 14, 2, 2, 'F');
+
+  // Letra F en blanco
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.text('F', x + 4.5, y + 11);
+
+  // Texto FADICC
+  doc.setFontSize(16);
   doc.setTextColor(234, 88, 12); // orange-600
-  doc.text('FADICC S.A.', 14, 20);
+  doc.text('FADICC', x + 18, y + 8);
 
   // Subtítulo
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setTextColor(100, 116, 139); // slate-500
-  doc.text('Fabricación de Cocinas Industriales y Domésticas', 14, 26);
-  doc.text('RUC: 20548796321 | Lima, Perú', 14, 30);
+  doc.setFont('helvetica', 'normal');
+  doc.text('S.A.', x + 52, y + 8);
+}
+
+function addHeaderInfo(doc: jsPDF, titulo: string, fecha: string) {
+  addLogo(doc, 14, 10);
 
   // Título del documento
   doc.setFontSize(14);
   doc.setTextColor(15, 23, 42); // slate-900
-  doc.text(titulo, 196, 20, { align: 'right' });
+  doc.setFont('helvetica', 'bold');
+  doc.text(titulo, 196, 18, { align: 'right' });
 
   // Fecha
   doc.setFontSize(9);
   doc.setTextColor(100, 116, 139);
-  doc.text(`Fecha emisión: ${new Date(fecha).toLocaleDateString('es-PE')}`, 196, 26, { align: 'right' });
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Fecha emisión: ${new Date(fecha).toLocaleDateString('es-PE')}`, 196, 24, { align: 'right' });
 
   // Línea separadora
   doc.setDrawColor(226, 232, 240); // slate-200
   doc.setLineWidth(0.5);
-  doc.line(14, 35, 196, 35);
+  doc.line(14, 30, 196, 30);
 }
 
 function addFooter(doc: jsPDF, y: number) {
@@ -73,13 +89,14 @@ export function generarPdfVenta(data: VentaPdfData) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const tipoLabel = data.tipo_comprobante === 'BOLETA' ? 'BOLETA DE VENTA' : 'FACTURA';
 
-  addLogoAndHeader(doc, `${tipoLabel} N° ${data.numero_comprobante}`, data.fecha_venta);
+  addHeaderInfo(doc, `${tipoLabel} N° ${data.numero_comprobante}`, data.fecha_venta);
 
   // Datos del cliente y vendedor
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
-  doc.text(`Cliente: ${data.cliente_nombre || 'Cliente General'}`, 14, 44);
-  doc.text(`Vendedor: ${data.vendedor_nombre || 'Vendedor'}`, 14, 49);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Cliente: ${data.cliente_nombre || 'Cliente General'}`, 14, 38);
+  doc.text(`Vendedor: ${data.vendedor_nombre || 'Vendedor'}`, 14, 43);
 
   // Tabla de productos
   const body = (data.detalles || []).map((d) => [
@@ -90,8 +107,12 @@ export function generarPdfVenta(data: VentaPdfData) {
     `S/ ${(d.cantidad * d.precio_unitario).toFixed(2)}`,
   ]);
 
+  if (body.length === 0) {
+    body.push(['—', 'Sin productos registrados', '—', '—', '—']);
+  }
+
   autoTable(doc, {
-    startY: 56,
+    startY: 48,
     head: [['SKU', 'Producto', 'Cant.', 'P. Unit.', 'Subtotal']],
     body,
     theme: 'grid',
@@ -99,6 +120,7 @@ export function generarPdfVenta(data: VentaPdfData) {
       fillColor: [249, 115, 22], // orange-500
       textColor: [255, 255, 255],
       fontSize: 9,
+      fontStyle: 'bold',
     },
     bodyStyles: { fontSize: 9, textColor: [15, 23, 42] },
     alternateRowStyles: { fillColor: [248, 250, 252] }, // slate-50
@@ -119,6 +141,7 @@ export function generarPdfVenta(data: VentaPdfData) {
 
   doc.setFontSize(10);
   doc.setTextColor(100, 116, 139);
+  doc.setFont('helvetica', 'normal');
   doc.text('Subtotal:', 150, finalY + 10, { align: 'right' });
   doc.text('IGV (18%):', 150, finalY + 16, { align: 'right' });
   doc.text('TOTAL:', 150, finalY + 24, { align: 'right' });
@@ -140,15 +163,16 @@ export function generarPdfVenta(data: VentaPdfData) {
 export function generarPdfProforma(data: ProformaPdfData) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
 
-  addLogoAndHeader(doc, `PROFORMA N° ${data.codigo_proforma}`, data.fecha_emision);
+  addHeaderInfo(doc, `PROFORMA N° ${data.codigo_proforma}`, data.fecha_emision);
 
   // Datos
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
-  doc.text(`Cliente: ${data.cliente_nombre || 'Cliente'}`, 14, 44);
-  doc.text(`Representante: ${data.representante_nombre || 'Representante'}`, 14, 49);
-  doc.text(`Estado: ${data.estado}`, 14, 54);
-  doc.text(`Válida hasta: ${new Date(data.fecha_vencimiento).toLocaleDateString('es-PE')}`, 14, 59);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Cliente: ${data.cliente_nombre || 'Cliente'}`, 14, 38);
+  doc.text(`Representante: ${data.representante_nombre || 'Representante'}`, 14, 43);
+  doc.text(`Estado: ${data.estado}`, 14, 48);
+  doc.text(`Válida hasta: ${new Date(data.fecha_vencimiento).toLocaleDateString('es-PE')}`, 14, 53);
 
   // Tabla
   const body = (data.detalles || []).map((d) => [
@@ -159,8 +183,12 @@ export function generarPdfProforma(data: ProformaPdfData) {
     `S/ ${d.subtotal.toFixed(2)}`,
   ]);
 
+  if (body.length === 0) {
+    body.push(['—', 'Sin productos registrados', '—', '—', '—']);
+  }
+
   autoTable(doc, {
-    startY: 66,
+    startY: 58,
     head: [['SKU', 'Producto', 'Cant.', 'Precio Pactado', 'Subtotal']],
     body,
     theme: 'grid',
@@ -168,6 +196,7 @@ export function generarPdfProforma(data: ProformaPdfData) {
       fillColor: [59, 130, 246], // blue-500
       textColor: [255, 255, 255],
       fontSize: 9,
+      fontStyle: 'bold',
     },
     bodyStyles: { fontSize: 9, textColor: [15, 23, 42] },
     alternateRowStyles: { fillColor: [248, 250, 252] },
@@ -185,6 +214,7 @@ export function generarPdfProforma(data: ProformaPdfData) {
   const finalY = (doc as any).lastAutoTable?.finalY || 130;
   doc.setFontSize(11);
   doc.setTextColor(100, 116, 139);
+  doc.setFont('helvetica', 'normal');
   doc.text('TOTAL:', 150, finalY + 10, { align: 'right' });
 
   doc.setFontSize(13);
@@ -195,6 +225,7 @@ export function generarPdfProforma(data: ProformaPdfData) {
   // Notas legales
   doc.setFontSize(8);
   doc.setTextColor(148, 163, 184);
+  doc.setFont('helvetica', 'normal');
   doc.text('Esta proforma tiene una validez de 15 días calendario desde su fecha de emisión.', 14, finalY + 22);
   doc.text('Los precios pueden variar sin previo aviso después de la fecha de vencimiento.', 14, finalY + 26);
   doc.text('Para convertir en pedido, contacte a su representante asignado.', 14, finalY + 30);
