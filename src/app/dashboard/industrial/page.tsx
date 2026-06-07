@@ -38,7 +38,7 @@ import {
   dbService,
 } from '@/lib/db';
 import { generarPdfProforma } from '@/lib/pdfService';
-import { enviarProformaEmail } from '@/lib/emailService';
+import { enviarProformaEmailApi } from '@/lib/emailClient';
 import { useSession } from '@/context/SessionContext';
 
 // =========================================================================
@@ -408,7 +408,7 @@ function DetailDrawer({
     setEmailEnviando(true);
     setEmailStatus(null);
     try {
-      const result = await enviarProformaEmail({
+      const result = await enviarProformaEmailApi({
         to: proforma.cliente_email || 'gonzalo.rojas.c@uni.pe',
         proformaCodigo: proforma.codigo_proforma,
         clienteNombre: proforma.cliente_nombre || 'Cliente',
@@ -425,7 +425,7 @@ function DetailDrawer({
 
   const handleWhatsApp = () => {
     const msg = encodeURIComponent(`Hola ${proforma.cliente_nombre || ''}, le enviamos la proforma ${proforma.codigo_proforma} de FADICC S.A. por S/ ${proforma.total.toFixed(2)}. ¿Podría revisarla?`);
-    window.open(`https://wa.me/?text=${msg}`, '_blank');
+    window.open(`https://wa.me/51912449977?text=${msg}`, '_blank');
   };
 
   return (

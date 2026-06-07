@@ -9,7 +9,7 @@ import GradientModal from '@/components/ui/GradientModal';
 import GradientDrawer from '@/components/ui/GradientDrawer';
 import AnimatedCounter from '@/components/ui/AnimatedCounter';
 import { dbService, VentaComercial, Proforma as ProformaReal } from '@/lib/db';
-import { enviarCatalogoEmail } from '@/lib/emailService';
+import { enviarCatalogoEmailApi } from '@/lib/emailClient';
 
 /* ── Tipos ── */
 interface Cliente {
@@ -436,7 +436,7 @@ export default function ClientesPage() {
                         setEnviandoCatalogo(true);
                         setCatalogoStatus(null);
                         try {
-                          const result = await enviarCatalogoEmail({
+                          const result = await enviarCatalogoEmailApi({
                             to: clienteDrawer.email || 'gonzalo.rojas.c@uni.pe',
                             clienteNombre: clienteDrawer.nombre,
                             productos: [
