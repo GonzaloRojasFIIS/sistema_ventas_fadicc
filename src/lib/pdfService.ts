@@ -34,43 +34,32 @@ interface ProformaPdfData {
   }[];
 }
 
-function addLogo(doc: jsPDF, x: number, y: number) {
-  // Logo cuadrado naranja
-  doc.setFillColor(249, 115, 22); // orange-500
-  doc.roundedRect(x, y, 14, 14, 2, 2, 'F');
-
-  // Letra F en blanco
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(18);
-  doc.setFont('helvetica', 'bold');
-  doc.text('F', x + 4.5, y + 11);
-
-  // Texto FADICC
-  doc.setFontSize(16);
-  doc.setTextColor(234, 88, 12); // orange-600
-  doc.text('FADICC', x + 18, y + 8);
-
-  // Subtítulo
-  doc.setFontSize(9);
-  doc.setTextColor(100, 116, 139); // slate-500
-  doc.setFont('helvetica', 'normal');
-  doc.text('S.A.', x + 52, y + 8);
+function loadLogo(): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.src = '/logo-transparente.png';
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+  });
 }
 
-function addHeaderInfo(doc: jsPDF, titulo: string, fecha: string) {
-  addLogo(doc, 14, 10);
+function addHeaderInfo(doc: jsPDF, titulo: string, fecha: string, logo: HTMLImageElement) {
+  // Logo real de la empresa
+  const logoW = 40;
+  const logoH = (logo.height / logo.width) * logoW;
+  doc.addImage(logo, 'PNG', 14, 8, logoW, logoH);
 
   // Título del documento
   doc.setFontSize(14);
   doc.setTextColor(15, 23, 42); // slate-900
   doc.setFont('helvetica', 'bold');
-  doc.text(titulo, 196, 18, { align: 'right' });
+  doc.text(titulo, 196, 16, { align: 'right' });
 
   // Fecha
   doc.setFontSize(9);
   doc.setTextColor(100, 116, 139);
   doc.setFont('helvetica', 'normal');
-  doc.text(`Fecha emisión: ${new Date(fecha).toLocaleDateString('es-PE')}`, 196, 24, { align: 'right' });
+  doc.text(`Fecha emisión: ${new Date(fecha).toLocaleDateString('es-PE')}`, 196, 22, { align: 'right' });
 
   // Línea separadora
   doc.setDrawColor(226, 232, 240); // slate-200
@@ -85,11 +74,14 @@ function addFooter(doc: jsPDF, y: number) {
   doc.text('Gracias por su preferencia', 105, y + 4, { align: 'center' });
 }
 
-export function generarPdfVenta(data: VentaPdfData) {
+export async function generarPdfVenta(data: VentaPdfData) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const tipoLabel = data.tipo_comprobante === 'BOLETA' ? 'BOLETA DE VENTA' : 'FACTURA';
 
-  addHeaderInfo(doc, `${tipoLabel} N° ${data.numero_comprobante}`, data.fecha_venta);
+  let logo: HTMLImageElement | null = null;
+  try { logo = await loadLogo(); } catch { /* si no carga, continúa sin logo */ }
+
+  addHeaderInfo(doc, `${tipoLabel} N° ${data.numero_comprobante}`, data.fecha_venta, logo || new Image());
 
   // Datos del cliente y vendedor
   doc.setFontSize(10);
@@ -160,10 +152,13 @@ export function generarPdfVenta(data: VentaPdfData) {
   doc.save(`${tipoLabel}_${data.numero_comprobante}.pdf`);
 }
 
-export function generarPdfProforma(data: ProformaPdfData) {
+export async function generarPdfProforma(data: ProformaPdfData) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
 
-  addHeaderInfo(doc, `PROFORMA N° ${data.codigo_proforma}`, data.fecha_emision);
+  let logo: HTMLImageElement | null = null;
+  try { logo = await loadLogo(); } catch { /* si no carga, continúa sin logo */ }
+
+  addHeaderInfo(doc, `PROFORMA N° ${data.codigo_proforma}`, data.fecha_emision, logo || new Image());
 
   // Datos
   doc.setFontSize(10);
