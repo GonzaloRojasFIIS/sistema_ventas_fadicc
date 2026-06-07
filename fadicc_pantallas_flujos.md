@@ -8,10 +8,10 @@
 
 ## 📐 SISTEMA DE DISEÑO GLOBAL
 
-### Paleta de Colores
+### Paleta de Colores (Modo Claro Premium)
 
 ```
-Tokens de color (Tailwind CSS v4 custom properties):
+Tokens de color (Tailwind CSS v4 @theme en globals.css):
 
 ── PRIMARIOS (Marca)
   --color-brand-500:    #f97316   (orange-500)   → Acción principal
@@ -19,31 +19,35 @@ Tokens de color (Tailwind CSS v4 custom properties):
   --color-brand-400:    #fb923c   (orange-400)   → Bordes de focus
   --color-brand-amber:  #f59e0b   (amber-500)    → Gradiente secundario de marca
 
-── NEUTROS DE INTERFAZ (Base oscura)
-  --color-bg-base:      #020617   (slate-950)    → Fondo de página
-  --color-bg-card:      #0f172a   (slate-900)    → Fondo de tarjetas / sidebar
-  --color-bg-elevated:  #1e293b   (slate-800)    → Inputs, hover de fila
-  --color-bg-subtle:    #334155   (slate-700)    → Bordes de separadores
-  --color-text-primary: #f1f5f9   (slate-100)    → Texto principal
-  --color-text-muted:   #94a3b8   (slate-400)    → Labels, texto secundario
-  --color-border:       #1e293b   (slate-800)    → Borde estándar de componentes
+── NEUTROS DE INTERFAZ (Base clara)
+  --color-bg-base:      #f8fafc   (slate-50)     → Fondo de página (radial-gradient)
+  --color-bg-card:      #ffffff   (white / 90%)  → Fondo de tarjetas / glassmorphism
+  --color-bg-elevated:  #f1f5f9   (slate-100)    → Inputs, hover de fila
+  --color-bg-subtle:    #e2e8f0   (slate-200)    → Bordes de separadores
+  --color-text-primary: #0f172a   (slate-900)    → Texto principal
+  --color-text-muted:   #64748b   (slate-500)    → Labels, texto secundario
+  --color-border:       #e2e8f0   (slate-200)    → Borde estándar de componentes
 
 ── SEMÁNTICOS
-  --color-success-bg:   #052e16   (green-950)
-  --color-success-text: #4ade80   (green-400)
-  --color-success-ring: #166534   (green-800)
+  --color-success-bg:   #ecfdf5   (green-50)
+  --color-success-text: #059669   (green-600)
+  --color-success-ring: #10b981   (green-500)
 
-  --color-danger-bg:    #2d0a0a   → rojo muy oscuro personalizado
-  --color-danger-text:  #f87171   (red-400)
-  --color-danger-ring:  #991b1b   (red-800)
+  --color-danger-bg:    #fef2f2   (red-50)
+  --color-danger-text:  #dc2626   (red-600)
+  --color-danger-ring:  #ef4444   (red-500)
 
-  --color-warning-bg:   #1c1100   → ámbar muy oscuro personalizado
-  --color-warning-text: #fbbf24   (amber-400)
-  --color-warning-ring: #92400e   (amber-800)
+  --color-warning-bg:   #fffbeb   (amber-50)
+  --color-warning-text: #d97706   (amber-600)
+  --color-warning-ring: #f59e0b   (amber-500)
 
-  --color-info-bg:      #0c1a2e   → azul muy oscuro personalizado
-  --color-info-text:    #60a5fa   (blue-400)
-  --color-info-ring:    #1e3a5f   (blue-800)
+  --color-info-bg:      #eff6ff   (blue-50)
+  --color-info-text:    #2563eb   (blue-600)
+  --color-info-ring:    #3b82f6   (blue-500)
+
+  --color-violet-bg:    #f5f3ff   (violet-50)
+  --color-violet-text:  #7c3aed   (violet-600)
+  --color-violet-ring:  #8b5cf6   (violet-500)
 ```
 
 ### Tipografía
@@ -109,14 +113,14 @@ Estructura HTML:
     {label}
   </span>
 
-Variantes y colores:
+Variantes y colores (modo claro):
 
-  variant="success"  → bg-green-950/60  border-green-800/40  text-green-400   · dot: bg-green-400
-  variant="danger"   → bg-red-950/60    border-red-800/40    text-red-400     · dot: bg-red-400
-  variant="warning"  → bg-amber-950/60  border-amber-800/40  text-amber-400   · dot: bg-amber-400
-  variant="info"     → bg-blue-950/60   border-blue-800/40   text-blue-400    · dot: bg-blue-400
-  variant="neutral"  → bg-slate-800/60  border-slate-700/40  text-slate-400   · dot: bg-slate-400
-  variant="violet"   → bg-violet-950/60 border-violet-800/40 text-violet-400  · dot: bg-violet-400
+  variant="success"  → bg-green-50   border-green-200  text-green-700   · dot: bg-green-500
+  variant="danger"   → bg-red-50     border-red-200    text-red-700     · dot: bg-red-500
+  variant="warning"  → bg-amber-50   border-amber-200  text-amber-700   · dot: bg-amber-500
+  variant="info"     → bg-blue-50    border-blue-200   text-blue-700    · dot: bg-blue-500
+  variant="neutral"  → bg-slate-100  border-slate-200  text-slate-600   · dot: bg-slate-400
+  variant="violet"   → bg-violet-50  border-violet-200 text-violet-700  · dot: bg-violet-500
 
 Casos de uso:
   Estado de proforma: PENDIENTE=warning, EN_NEGOCIACION=info, APROBADA=success, RECHAZADA=danger, EXPIRADA=neutral
@@ -125,29 +129,29 @@ Casos de uso:
   Stock de producto:  OK=success, BAJO=warning, SIN_STOCK=danger
 ```
 
-#### `<Card>` — Tarjeta con Hover
+#### `<GradientCard>` — Tarjeta Glassmorphism con Hover
 
 ```
 Clases base:
-  bg-slate-900 border border-slate-800 rounded-xl p-5
+  bg-white/90 backdrop-blur-sm border border-slate-200 rounded-xl p-5
   transition-all duration-200 ease-in-out
-  hover:border-slate-700 hover:shadow-lg hover:shadow-black/20
+  hover:border-slate-300 hover:shadow-lg hover:shadow-slate-200/50
 
 Variante "clickable" (agrega cursor-pointer y efecto de elevación):
-  + cursor-pointer hover:bg-slate-900/80 hover:-translate-y-0.5
+  + cursor-pointer hover:bg-white hover:-translate-y-0.5
 
 Variante "KPI" (acento de color en borde superior):
   + border-t-2 border-t-[accent-color]
   + shadow-[accent-color]/10
 ```
 
-#### `<DarkInput>` — Input oscuro
+#### `<GlassInput>` — Input Glassmorphism
 
 ```
 Clases:
-  bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2.5
-  text-slate-100 placeholder:text-slate-500 text-sm
-  focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500/50
+  bg-white/80 backdrop-blur-sm border border-slate-200 rounded-lg px-3.5 py-2.5
+  text-slate-800 placeholder:text-slate-400 text-sm
+  focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400
   transition-all duration-150
   disabled:opacity-50 disabled:cursor-not-allowed
 
@@ -155,15 +159,15 @@ Con icono izquierdo:
   pl-10 (el icono queda en absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4)
 
 Error state:
-  border-red-500/50 focus:ring-red-500/30 focus:border-red-500/50
+  border-red-400 focus:ring-red-500/20 focus:border-red-400
 ```
 
-#### `<Button>` — Botones
+#### `<GradientButton>` — Botones
 
 ```
 BASE (compartido):
   inline-flex items-center justify-center gap-2 rounded-lg font-medium
-  transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900
+  transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2
   disabled:opacity-50 disabled:cursor-not-allowed
 
 Tamaños:
@@ -173,36 +177,36 @@ Tamaños:
 
 Variantes:
   variant="primary"
-    → bg-gradient-to-r from-orange-600 to-amber-500
+    → bg-gradient-to-r from-orange-500 to-amber-400
       text-white shadow-lg shadow-orange-500/20
-      hover:from-orange-500 hover:to-amber-400
+      hover:from-orange-600 hover:to-amber-500
       focus:ring-orange-500/50
 
   variant="secondary"
-    → bg-slate-800 border border-slate-700 text-slate-100
-      hover:bg-slate-700 hover:border-slate-600
-      focus:ring-slate-500/50
-
-  variant="ghost"
-    → bg-transparent text-slate-400
-      hover:bg-slate-800/50 hover:text-slate-200
+    → bg-white border border-slate-200 text-slate-700
+      hover:bg-slate-50 hover:border-slate-300
       focus:ring-slate-500/30
 
+  variant="ghost"
+    → bg-transparent text-slate-500
+      hover:bg-slate-100 hover:text-slate-700
+      focus:ring-slate-500/20
+
   variant="danger"
-    → bg-red-950/40 border border-red-800/40 text-red-400
-      hover:bg-red-900/40 hover:border-red-700/40 hover:text-red-300
+    → bg-red-50 border border-red-200 text-red-600
+      hover:bg-red-100 hover:border-red-300
       focus:ring-red-500/30
 
   variant="success"
-    → bg-green-950/40 border border-green-800/40 text-green-400
-      hover:bg-green-900/40 hover:border-green-700/40 hover:text-green-300
-      focus:ring-green-500/30
+    → bg-emerald-50 border border-emerald-200 text-emerald-600
+      hover:bg-emerald-100 hover:border-emerald-300
+      focus:ring-emerald-500/30
 
 Estado loading (agrega spinner):
   + <Loader2 className="w-4 h-4 animate-spin" /> antes del texto
 ```
 
-#### `<Toast>` — Notificación emergente
+#### `<GradientToast>` — Notificación emergente
 
 ```
 Posición: fixed top-4 right-4 z-[9999]
@@ -214,29 +218,29 @@ Estructura:
     <Icon /> {/* Ícono semántico según tipo */}
     <div>
       <p class="font-semibold text-sm">{título}</p>
-      <p class="text-xs text-slate-400 mt-0.5">{mensaje}</p>
+      <p class="text-xs text-slate-500 mt-0.5">{mensaje}</p>
     </div>
     <button class="ml-auto ...">✕</button>
   </div>
 
-Variantes:
-  type="success" → bg-green-950/80  border-green-800/40  text-green-300   · icono: CheckCircle2
-  type="error"   → bg-red-950/80    border-red-800/40    text-red-300     · icono: XCircle
-  type="warning" → bg-amber-950/80  border-amber-800/40  text-amber-300   · icono: AlertTriangle
-  type="info"    → bg-blue-950/80   border-blue-800/40   text-blue-300    · icono: Info
+Variantes (modo claro):
+  type="success" → bg-white/90  border-green-200  text-green-700   · icono: CheckCircle2
+  type="error"   → bg-white/90  border-red-200    text-red-700     · icono: XCircle
+  type="warning" → bg-white/90  border-amber-200  text-amber-700   · icono: AlertTriangle
+  type="info"    → bg-white/90  border-blue-200   text-blue-700    · icono: Info
 
 Duración autocierre: 4000ms (success/info), 6000ms (warning/error)
 ```
 
-#### `<Modal>` — Modal con backdrop-blur
+#### `<GradientModal>` — Modal con backdrop-blur
 
 ```
 Overlay: fixed inset-0 z-50 flex items-center justify-center p-4
-  Fondo: bg-black/70 backdrop-blur-sm
+  Fondo: bg-black/60 backdrop-blur-sm
   Animación entrada: opacity-0 → opacity-100, duration-200
 
 Panel:
-  bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl
+  bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl shadow-2xl
   w-full max-w-[tamaño] max-h-[90vh] overflow-y-auto
   Animación entrada: scale-95 opacity-0 → scale-100 opacity-100, duration-200 ease-out
 
@@ -247,27 +251,27 @@ Tamaños de panel:
   size="xl"  → max-w-4xl
 
 Estructura interna:
-  Header:  flex items-center justify-between px-6 py-4 border-b border-slate-800
-           Título: text-lg font-semibold text-slate-100
+  Header:  flex items-center justify-between px-6 py-4 border-b border-slate-100
+           Título: text-lg font-semibold text-slate-900
            Botón X: ghost, icono X, top-right
   Body:    px-6 py-5 space-y-4
-  Footer:  flex justify-end gap-3 px-6 py-4 border-t border-slate-800
+  Footer:  flex justify-end gap-3 px-6 py-4 border-t border-slate-100
 ```
 
-#### `<Drawer>` — Panel deslizable lateral
+#### `<GradientDrawer>` — Panel deslizable lateral
 
 ```
 Overlay: fixed inset-0 z-50 flex justify-end
-  Fondo: bg-black/60 backdrop-blur-sm
+  Fondo: bg-black/40 backdrop-blur-sm
   Click en overlay cierra el drawer
 
 Panel:
-  bg-slate-900 border-l border-slate-800
+  bg-white/95 backdrop-blur-md border-l border-slate-200
   w-full max-w-[480px] h-full overflow-y-auto
   Animación entrada: translate-x-full → translate-x-0, duration-300 ease-out
   Animación salida:  translate-x-0 → translate-x-full, duration-200 ease-in
 
-Estructura interna (igual que Modal: header/body con scroll)
+Estructura interna (igual que GradientModal: header/body con scroll)
 ```
 
 ---
@@ -284,8 +288,7 @@ Estructura interna (igual que Modal: header/body con scroll)
 
 ```
 Viewport completo: min-h-screen w-full
-Fondo: background: radial-gradient(ellipse at top, #0f172a 0%, #020617 50%, #000000 100%)
-       + patrón de cuadrícula sutil opcional: bg-[size:60px_60px] bg-[image:linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)]
+Fondo: background: radial-gradient(ellipse at top, #f8fafc 0%, #ffffff 50%, #f1f5f9 100%)
 
 Centrado: flex items-center justify-center px-4 py-12
 ```
@@ -295,9 +298,9 @@ Centrado: flex items-center justify-center px-4 py-12
 ```
 Dimensiones: w-full max-w-md
 Estilo:
-  bg-slate-900/80 backdrop-blur-xl
-  border border-slate-800
-  rounded-2xl shadow-2xl shadow-black/50
+  bg-white/90 backdrop-blur-xl
+  border border-slate-200
+  rounded-2xl shadow-2xl shadow-slate-200/50
   p-8
 
 Animación de entrada: opacity-0 translate-y-4 → opacity-100 translate-y-0
@@ -329,25 +332,25 @@ Subtítulo:
 <form> con space-y-5
 
 ─── Campo Email ───────────────────────────────────────────
-Label: "Correo Electrónico" text-sm font-medium text-slate-300
+Label: "Correo Electrónico" text-sm font-medium text-slate-700
 Input: type="email" | placeholder="usuario@fadicc.com"
        Icono izquierdo: <Mail className="w-4 h-4" />
-       Clase DarkInput estándar
+       Clase GlassInput estándar
 
 ─── Campo Contraseña ──────────────────────────────────────
-Label: "Contraseña" text-sm font-medium text-slate-300
+Label: "Contraseña" text-sm font-medium text-slate-700
 Input: type="password" (toggleable a type="text")
        Icono izquierdo: <Lock className="w-4 h-4" />
        Botón derecho toggle (absolute right-3):
-         Estado cerrado: <Eye className="w-4 h-4 text-slate-500 hover:text-slate-300" />
-         Estado abierto: <EyeOff className="w-4 h-4 text-slate-500 hover:text-slate-300" />
-       Clase DarkInput con pr-10 (espacio para icono derecho)
+         Estado cerrado: <Eye className="w-4 h-4 text-slate-400 hover:text-slate-600" />
+         Estado abierto: <EyeOff className="w-4 h-4 text-slate-400 hover:text-slate-600" />
+       Clase GlassInput con pr-10 (espacio para icono derecho)
 
 ─── Mensaje de Error ──────────────────────────────────────
 Condicional: solo visible cuando error !== null
-  <div class="flex items-center gap-2 p-3 rounded-lg bg-red-950/40 border border-red-900/40">
-    <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
-    <p class="text-red-400 text-sm">{error}</p>
+  <div class="flex items-center gap-2 p-3 rounded-lg bg-red-50 border border-red-200">
+    <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+    <p class="text-red-600 text-sm">{error}</p>
   </div>
 Animación de aparición: opacity-0 → opacity-100 con fade-in 200ms
 
@@ -363,9 +366,9 @@ El botón se deshabilita mientras isLoading === true
 ```
 Elemento: <details> nativo del HTML5
 
-<details class="mt-6 rounded-xl border border-slate-800 overflow-hidden">
+<details class="mt-6 rounded-xl border border-slate-200 overflow-hidden">
   <summary class="flex items-center justify-between px-4 py-3 cursor-pointer
-                  text-sm text-slate-400 hover:text-slate-300 hover:bg-slate-800/40
+                  text-sm text-slate-500 hover:text-slate-700 hover:bg-slate-50
                   transition-colors select-none list-none">
     <span class="flex items-center gap-2">
       <TestTube2 className="w-4 h-4" />
@@ -375,7 +378,7 @@ Elemento: <details> nativo del HTML5
   </summary>
 
   <div class="px-4 pb-4 pt-1">
-    <p class="text-xs text-slate-500 mb-3">Contraseña universal: <code class="font-mono text-amber-400">123456</code></p>
+    <p class="text-xs text-slate-500 mb-3">Contraseña universal: <code class="font-mono text-amber-600">123456</code></p>
 
     Grid 2 columnas con gap-2:
     ┌─────────────────────┬─────────────────────┐
@@ -418,7 +421,7 @@ success:  Router.push() al dashboard correspondiente según rol del usuario
 
 ```
 Estructura:
-  <div class="flex h-screen bg-slate-950 overflow-hidden">
+  <div class="flex h-screen bg-gradient-to-br from-slate-50 to-white overflow-hidden">
     <Sidebar />          {/* posición fixed o flex-shrink-0, w-64 */}
     <main class="flex-1 overflow-y-auto">
       <TopBar />         {/* sticky top-0 z-10 */}
@@ -430,20 +433,20 @@ Estructura:
 
 ─── SIDEBAR ────────────────────────────────────────────────────────────────────
   Dimensiones: w-64 h-full flex-shrink-0
-  Fondo: bg-slate-900 border-r border-slate-800
+  Fondo: bg-white/90 backdrop-blur-md border-r border-slate-200
   Estructura interna:
 
   ┌── Logo (px-5 py-5) ──────────────────────────────────────────────────────┐
   │  <div class="flex items-center gap-3">                                   │
   │    [Ícono cuadrado brand gradient]                                       │
-  │    <span class="font-bold text-lg text-slate-100">FADICC</span>          │
+  │    <span class="font-bold text-lg text-slate-900">FADICC</span>          │
   │  </div>                                                                  │
   └──────────────────────────────────────────────────────────────────────────┘
 
-  ┌── Info de usuario (px-4 py-3 mx-2 rounded-xl bg-slate-800/50 mt-2) ─────┐
+  ┌── Info de usuario (px-4 py-3 mx-2 rounded-xl bg-slate-50 mt-2) ─────┐
   │  [Avatar circular: iniciales del nombre, bg brand gradient, w-9 h-9]   │
   │  <div>                                                                   │
-  │    <p class="text-sm font-medium text-slate-100">{nombre}</p>           │
+  │    <p class="text-sm font-medium text-slate-800">{nombre}</p>           │
   │    <StatusBadge variant según rol>{rol}</StatusBadge>                   │
   │  </div>                                                                  │
   └──────────────────────────────────────────────────────────────────────────┘
@@ -451,9 +454,9 @@ Estructura:
   ┌── Menú de navegación (mt-6 space-y-1 px-3) ─────────────────────────────┐
   │  Cada ítem:                                                              │
   │  <Link class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm   │
-  │               text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 │
+  │               text-slate-500 hover:text-slate-900 hover:bg-slate-100/60 │
   │               transition-all duration-150                                │
-  │               [active: bg-slate-800 text-slate-100                       │
+  │               [active: bg-white text-slate-900 shadow-sm              │
   │                + border-l-2 border-orange-500 -ml-px pl-[calc(0.75rem+1px)]│
   │               ]">                                                         │
   │    <Icon class="w-4 h-4" />                                             │
@@ -470,21 +473,21 @@ Estructura:
   │  └── Administración (/dashboard/admin)   → Settings         [ADMIN]     │
   └──────────────────────────────────────────────────────────────────────────┘
 
-  ┌── Botón Cerrar Sesión (mt-auto, border-t border-slate-800, px-3 py-4) ──┐
-  │  Button variant="ghost" size="sm" + w-full justify-start text-red-400  │
+  ┌── Botón Cerrar Sesión (mt-auto, border-t border-slate-200, px-3 py-4) ──┐
+  │  GradientButton variant="ghost" size="sm" + w-full justify-start text-red-500  │
   │  <LogOut className="w-4 h-4" /> Cerrar Sesión                          │
   └──────────────────────────────────────────────────────────────────────────┘
 
 ─── TOP BAR ────────────────────────────────────────────────────────────────────
-  Clases: bg-slate-950/80 backdrop-blur-sm border-b border-slate-800/50 px-6 py-4
+  Clases: bg-white/80 backdrop-blur-sm border-b border-slate-200/50 px-6 py-4
   Layout: flex items-center justify-between
 
   Izquierda:
-    <h1 class="text-xl font-semibold text-slate-100">{título de sección}</h1>
+    <h1 class="text-xl font-semibold text-slate-900">{título de sección}</h1>
 
   Derecha:
     Fecha y hora en vivo (actualizada cada segundo):
-    <div class="flex items-center gap-2 text-slate-400 text-sm font-mono">
+    <div class="flex items-center gap-2 text-slate-500 text-sm font-mono">
       <Clock className="w-4 h-4" />
       {diaDeSemana}, {fecha larga}  ·  {HH:MM:SS}
     </div>
@@ -504,18 +507,18 @@ Estructura:
   ┌─── KPI 1: Venta Comercial Hoy ──────────────────────────────────┐
   │  Acento: border-t-orange-500, shadow-orange-500/10              │
   │  Ícono: <ShoppingBag className="w-12 h-12 text-orange-500/20"/> │
-  │  Label: "Venta Comercial Hoy" text-slate-400 text-sm            │
-  │  Valor: "S/ {total}" text-4xl font-bold text-slate-100          │
-  │         font-mono para el número                                │
-  │  Sub:   "{n} transacciones" text-sm text-slate-500              │
-  │  Trend: <TrendingUp/> "+{%} vs ayer" text-green-400 text-xs     │
+  │  Label: "Venta Comercial Hoy" text-slate-500 text-sm            │
+  │  Valor: "S/ {total}" text-4xl font-bold text-slate-900          │
+  │         font-mono para el número (AnimatedCounter)              │
+  │  Sub:   "{n} transacciones" text-sm text-slate-400              │
+  │  Trend: <TrendingUp/> "+{%} vs ayer" text-emerald-600 text-xs   │
   └─────────────────────────────────────────────────────────────────┘
 
   ┌─── KPI 2: Pedidos Industriales ─────────────────────────────────┐
   │  Acento: border-t-blue-500, shadow-blue-500/10                  │
   │  Ícono: <Factory className="w-12 h-12 text-blue-500/20"/>       │
   │  Label: "Pedidos Industriales Activos"                          │
-  │  Valor: "{n}" en text-4xl font-bold text-slate-100              │
+  │  Valor: "{n}" en text-4xl font-bold text-slate-900             │
   │  Sub:   desglose "En producción: {n} · Por despachar: {n}"      │
   └─────────────────────────────────────────────────────────────────┘
 
@@ -523,25 +526,25 @@ Estructura:
   │  Acento: border-t-green-500, shadow-green-500/10                │
   │  Ícono: <BarChart3 className="w-12 h-12 text-green-500/20"/>    │
   │  Label: "Tasa Conversión Proformas"                             │
-  │  Valor: "{%}%" text-4xl font-bold text-green-400                │
+  │  Valor: "{%}%" text-4xl font-bold text-emerald-600              │
   │  Progress bar:                                                  │
-  │    <div class="mt-3 h-2 bg-slate-800 rounded-full overflow-hidden">│
-  │      <div class="h-full bg-green-500 rounded-full              │
+  │    <div class="mt-3 h-2 bg-slate-100 rounded-full overflow-hidden">│
+  │      <div class="h-full bg-emerald-500 rounded-full            │
   │                  transition-all duration-1000 ease-out"         │
   │           style="width: {%}%" />                                │
   │    </div>                                                       │
-  │  Sub: "{aprobadas}/{total} proformas" text-slate-500 text-xs    │
+  │  Sub: "{aprobadas}/{total} proformas" text-slate-400 text-xs    │
   └─────────────────────────────────────────────────────────────────┘
 
   ┌─── KPI 4: Alertas Stock Crítico ────────────────────────────────┐
-  │  Acento: border-t-red-500 (si > 0) o border-t-slate-700        │
+  │  Acento: border-t-red-500 (si > 0) o border-t-slate-200        │
   │  Ícono: <AlertTriangle className="w-12 h-12 text-red-500/20"/>  │
   │  Label: "Alertas Stock Crítico"                                 │
   │  Valor: "{n}" text-4xl font-bold                               │
-  │         text-red-400 (si n > 0) / text-green-400 (si n === 0)  │
-  │  Sub (si n > 0): "productos bajo mínimo" text-red-400/70        │
-  │  Sub (si n = 0): "Todos los productos OK" text-green-400/70     │
-  │  Link: "Ver inventario →" text-xs text-orange-400 hover:underline│
+  │         text-red-600 (si n > 0) / text-emerald-600 (si n === 0)│
+  │  Sub (si n > 0): "productos bajo mínimo" text-red-500/70        │
+  │  Sub (si n = 0): "Todos los productos OK" text-emerald-600/70   │
+  │  Link: "Ver inventario →" text-xs text-orange-500 hover:underline│
   └─────────────────────────────────────────────────────────────────┘
 
 ─── SECCIÓN 2: Fila media (grid grid-cols-1 lg:grid-cols-5 gap-4 mt-4) ──
@@ -551,13 +554,13 @@ Estructura:
   │    "Últimas Ventas del Día" + Badge "{n} hoy" variant=success       │
   │  Tabla compacta (no overflow, caben 5 filas):                       │
   │    Columnas: Hora | Comprobante | Cliente | Total | Vendedor        │
-  │    Filas: text-sm, border-b border-slate-800/50 last:border-b-0     │
-  │    Hover fila: bg-slate-800/30                                      │
+  │    Filas: text-sm, border-b border-slate-100 last:border-b-0        │
+  │    Hover fila: bg-slate-50/50                                       │
   │    Hora: font-mono text-slate-400 text-xs                          │
-  │    Comprobante: text-orange-400 font-mono text-xs                  │
-  │    Total: font-semibold text-slate-100 font-mono                   │
+  │    Comprobante: text-orange-500 font-mono text-xs                  │
+  │    Total: font-semibold text-slate-900 font-mono                   │
   │  Estado vacío: "No hay ventas registradas hoy"                      │
-  │    centered, text-slate-500, icono ShoppingBag                     │
+  │    centered, text-slate-400, icono ShoppingBag                     │
   └─────────────────────────────────────────────────────────────────────┘
 
   ┌─── Proformas Pendientes (col-span-2) ───────────────────────────────┐
@@ -565,12 +568,12 @@ Estructura:
   │    "Proformas Pendientes" + Badge "{n}" variant=warning             │
   │  Lista (space-y-2 max-h-[280px] overflow-y-auto custom-scrollbar):  │
   │    Cada ítem: flex items-center justify-between py-2               │
-  │      Izq: código proforma (font-mono text-xs text-orange-400)      │
-  │           empresa cliente (text-sm text-slate-200)                  │
-  │      Der: monto total (font-mono text-slate-100 text-sm)           │
+  │      Izq: código proforma (font-mono text-xs text-orange-500)      │
+  │           empresa cliente (text-sm text-slate-700)                  │
+  │      Der: monto total (font-mono text-slate-900 text-sm)           │
   │           StatusBadge del estado                                    │
-  │      Separador: border-b border-slate-800/50                       │
-  │  Link al final: "Ver todas las proformas →" text-orange-400 text-xs│
+  │      Separador: border-b border-slate-100                        │
+  │  Link al final: "Ver todas las proformas →" text-orange-500 text-xs│
   └─────────────────────────────────────────────────────────────────────┘
 
 ─── SECCIÓN 3: Rendimiento de Vendedores (full width, mt-4) ──────────────

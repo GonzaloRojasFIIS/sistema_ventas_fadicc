@@ -1,7 +1,7 @@
 # fadicc_analisis_diseno
 
 **Empresa:** FADICC S.A.
-**Versión del Documento:** 3.0
+**Versión del Documento:** 2.0
 **Fecha de Emisión:** 6 de junio de 2026
 **Clasificación:** Uso Interno — Confidencial
 **Autores:** Equipo de Desarrollo FADICC
@@ -36,7 +36,8 @@ FADICC S.A. es una empresa manufacturera peruana especializada en la fabricació
 3. **Controlar el Inventario en Tiempo Real:** Mantener un registro actualizado del stock por producto, con alertas de stock crítico, descuento automático en ventas y un módulo de ajustes manuales auditables.
 4. **Gestionar el Ciclo de Vida de Proformas:** Cubrir el flujo completo de una cotización industrial: desde su creación y negociación hasta su aprobación, conversión en orden de pedido, seguimiento de producción y registro de entrega.
 5. **Proveer KPIs Gerenciales Dinámicos:** Ofrecer al rol ADMIN un dashboard con indicadores clave de rendimiento (ventas del día, tasa de conversión de proformas, alertas de stock, comparativas por vendedor) alimentados directamente desde la base de datos.
-6. **Garantizar Resiliencia Operacional:** Implementar un patrón de base de datos dual (Supabase en línea + localStorage como fallback) para asegurar la continuidad operativa del canal comercial ante eventuales interrupciones de conectividad.
+6. **Proveer KPIs Gerenciales Dinámicos:** Dashboard con 8 métricas clave, gráficos Recharts (área, embudo), top productos y timeline de actividad.
+7. **Garantizar Resiliencia Operacional:** Patrón de base de datos dual (Supabase primario + localStorage fallback) para asegurar continuidad ante interrupciones de conectividad.
 
 ### 1.3 Alcance
 
@@ -119,31 +120,31 @@ flowchart TD
 | Capa | Tecnología | Razón de Elección |
 | :--- | :--- | :--- |
 | **Framework Web** | Next.js 16 (App Router) | Renderizado híbrido SSR/CSR, Server Actions nativos, sistema de rutas basado en archivos, soporte TypeScript nativo. |
-| **Biblioteca UI** | React 19 | Concurrent rendering, Suspense mejorado, uso de `use()` hook para promesas asíncronas. |
-| **Estilos** | Tailwind CSS v4 | Utility-first, diseño dark mode con glassmorphism, configuración mediante CSS nativo sin `tailwind.config.js`. |
-| **Lenguaje** | TypeScript 5 | Tipado estático estricto, IntelliSense completo, reducción de errores en tiempo de ejecución. |
-| **Base de Datos** | Supabase (PostgreSQL 15) | BaaS con autenticación, RLS, realtime subscriptions y API REST/RPC automática. |
-| **ORM / Cliente DB** | Supabase JS Client v2 | Abstracción tipada de queries, soporte para RLS y funciones RPC de PostgreSQL. |
-| **Estado Global** | React Context + `useReducer` | Gestión liviana de sesión de usuario y carrito de ventas sin dependencia de librerías externas. |
-| **Fallback Offline** | localStorage (Web API) | Persistencia del carrito y caja turno local en caso de interrupción de la conexión con Supabase. |
-| **Linting** | ESLint + Next.js Config | Reglas recomendadas de Next.js y TypeScript para mantener calidad de código. |
-| **Entorno** | Vercel (Deploy) | Integración nativa con Next.js, variables de entorno, CI/CD automático desde Git. |
+| **Biblioteca UI** | React 19 | Concurrent rendering, Suspense mejorado. |
+| **Estilos** | Tailwind CSS v4 | Modo claro premium con degradados sutiles (`radial-gradient` global), glassmorphism en tarjetas (`bg-white/90 backdrop-blur-sm`). Configuración vía `@theme` en `globals.css`, sin `tailwind.config.js`. |
+| **Lenguaje** | TypeScript 5 | Tipado estático estricto, IntelliSense completo. |
+| **Base de Datos** | Supabase (PostgreSQL 15) | BaaS con autenticación, RLS, API REST automática. Conectado en producción y desarrollo. |
+| **ORM / Cliente DB** | Supabase JS Client v2 | Abstracción tipada de queries. |
+| **Estado Global** | React Context (`SessionContext`) | Gestión de sesión de usuario con persistencia en localStorage. |
+| **Fallback Offline** | localStorage (Web API) | Persistencia de datos cuando Supabase no está configurado. |
+| **Gráficos** | Recharts ^2 | KPIs visuales: áreas, embudos, barras. |
+| **Linting** | ESLint + Next.js Config | Reglas recomendadas de Next.js y TypeScript. |
+| **Entorno** | Vercel (Deploy) | CI/CD automático desde GitHub. |
 
 ### 2.3 Patrón Dual-Mode de Base de Datos
 
-El servicio `dbService` (ubicado en `src/lib/db.ts`) encapsula toda la lógica de acceso a datos e implementa un patrón de **doble modo** para garantizar la resiliencia operativa, especialmente crítica para el canal comercial donde una interrupción no puede paralizar las ventas.
+El servicio `dbService` (`src/lib/db.ts`) encapsula toda la lógica de acceso a datos e implementa un patrón de **doble modo**:
 
 **Modo Primario (Supabase Online):**
-- Al iniciar la aplicación, el servicio verifica la conectividad con Supabase mediante un ping ligero.
-- Si la conexión está disponible, todas las operaciones de lectura y escritura se realizan directamente contra PostgreSQL a través del cliente `@supabase/supabase-js`.
-- Los datos leídos de Supabase se sincronizan al localStorage como caché local para servir de respaldo.
+- Detecta automáticamente si las variables de entorno `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY` están configuradas y son válidas.
+- Todas las operaciones CRUD se ejecutan directamente contra PostgreSQL vía `@supabase/supabase-js`.
 
 **Modo Fallback (localStorage Offline):**
-- Si el ping a Supabase falla o retorna un error de red, el servicio cambia automáticamente al modo fallback.
-- Las operaciones de escritura (nuevas ventas, movimientos de caja) se encolan en localStorage con un flag `_pendingSync: true`.
-- Al recuperar la conexión, una función de reconciliación (`syncPendingOperations()`) procesa la cola y persiste los datos pendientes en Supabase, evitando duplicados mediante IDs UUID generados en el cliente.
+- Si Supabase no está configurado o las credenciales son inválidas, el servicio usa `localStorage` como fuente de datos.
+- Los datos iniciales (productos, clientes, usuarios) se cargan desde objetos mock (`INITIAL_PRODUCTOS`, `INITIAL_CLIENTES`, etc.).
+- Cada operación de escritura actualiza tanto el estado React como `localStorage`.
 
-**Consideración de Seguridad:** Los módulos que requieren consistencia fuerte (administración de usuarios, aprobación de proformas) deshabilitan el modo fallback y presentan un error al usuario si no hay conectividad.
+**Consideración de Seguridad:** Los módulos que requieren consistencia fuerte (administración de usuarios) funcionan igualmente en modo fallback, pero los datos son locales al navegador.
 
 ---
 
@@ -708,32 +709,48 @@ flowchart TD
 
 | Pantalla | Ruta Next.js | Rol(es) con Acceso | Descripción Funcional |
 | :--- | :--- | :--- | :--- |
-| **Login** | `/login` | Todos (sin sesión) | Formulario de autenticación. Fondo degradado oscuro, tarjeta glassmorphism con campos de email y contraseña. Botón de gradiente naranja-ámbar. Panel de credenciales de prueba colapsable (solo en desarrollo). |
-| **Dashboard KPIs** | `/dashboard` | ADMIN | Panel gerencial con 4 tarjetas KPI (ventas del día comercial/industrial, tasa de conversión, alertas de stock), tabla de ventas recientes, gráfico de barras por vendedor y embudo de proformas. |
-| **Canal Comercial** | `/comercial` | VENDEDOR, ADMIN | Interfaz de venta directa en tienda. Sección superior de control de caja (apertura/cierre). Layout 2 columnas: catálogo buscable con validación de stock visual + carrito de venta con liquidación (subtotal, IGV 18%, total). |
-| **Canal Industrial / Proformas** | `/industrial` | REPRESENTANTE, ADMIN | Tablero Kanban de proformas con columnas: Pendiente, En Negociación, Aprobada, Rechazada, Expirada. Modal de creación de proforma con selección de cliente, productos, cantidades y precios pactados. Acciones por tarjeta. |
-| **Planta / Producción** | `/produccion` | PRODUCCION, ALMACEN, ADMIN | Tabla de órdenes de pedido activas con badges de estado dinámicos (color amarillo: EN PRODUCCION, azul: LISTO PARA DESPACHO, verde: ENTREGADO). Botones contextuales según rol y estado: "Terminar Fabricación" para PRODUCCION y "Registrar Entrega" para ALMACEN. |
-| **Inventario / Stock** | `/inventario` | ALMACEN, ADMIN | Tabla de productos con stock actual, stock mínimo e indicador de alerta (badge ámbar si bajo stock, rojo si sin stock). Panel lateral de historial de movimientos por producto. Modal de registro de movimiento (Entrada / Ajuste Manual). |
-| **Gestión de Clientes** | `/clientes` | VENDEDOR, REPRESENTANTE, ADMIN | Lista paginada de clientes con buscador por número de documento. Ficha de cliente con edición inline. Formulario modal de alta de nuevo cliente. Búsqueda integrada en formularios de venta y proforma. |
-| **Administración / Usuarios** | `/admin` | ADMIN | Tabla de usuarios del sistema con columnas: Nombre, Email, Rol y Estado (Activo/Inactivo). Acciones: editar rol, activar/desactivar usuario. Formulario de creación de nuevo usuario con generación de contraseña inicial. |
+| **Login** | `/` | Todos (sin sesión) | Formulario de autenticación. Fondo degradado claro, tarjeta glassmorphism con campos de email y contraseña. Botón de gradiente naranja-ámbar. Panel de credenciales de prueba colapsable. |
+| **Dashboard KPIs** | `/dashboard` | ADMIN | Panel gerencial con 8 KPIs animados (`AnimatedCounter`), gráficos Recharts (área + embudo), top productos, timeline de actividad y tabla de ventas recientes. |
+| **Canal Comercial** | `/dashboard/comercial` | ADMIN, VENDEDOR, REPRESENTANTE | Interfaz de venta directa. Banner sticky de estado de caja. Layout 2 columnas: catálogo con imágenes, filtros por categoría, validación de stock visual + carrito de venta con liquidación IGV 18%. Historial del turno con tabs. |
+| **Canal Industrial** | `/dashboard/industrial` | ADMIN, VENDEDOR, REPRESENTANTE | Tablero Kanban de proformas (5 columnas: Pendiente, En Negociación, Aprobada, Rechazada, Expirada). Wizard de 3 pasos para crear proformas. Drawer de detalle con timeline de estados. |
+| **Producción** | `/dashboard/produccion` | ADMIN, PRODUCCION, ALMACEN | Stepper degradado de órdenes de pedido. Filtros avanzados por estado y fecha. Métricas de tiempo promedio de fabricación, entregados del mes y pedidos en riesgo. |
+| **Inventario** | `/dashboard/inventario` | ADMIN, ALMACEN, VENDEDOR, REPRESENTANTE | Tabla de productos con miniaturas, stock actual, stock mínimo y badges de estado. Modal de movimiento (Entrada / Ajuste Manual). Drawer de historial por producto. |
+| **Clientes** | `/dashboard/clientes` | ADMIN, VENDEDOR, REPRESENTANTE | Lista paginada con buscador por DNI/RUC. Ficha de cliente con historial de compras. Modal de alta rápida integrado en Canal Comercial. |
+| **Administración** | `/dashboard/admin` | ADMIN | Tabla de usuarios con roles y estado. Edición inline de rol y activo. Creación de nuevos usuarios con contraseña temporal `123456`. |
 
-### 8.2 Guía de Estilo Visual
+### 8.2 Guía de Estilo Visual (Modo Claro Premium)
 
 | Elemento | Especificación |
 | :--- | :--- |
-| **Modo** | Dark Mode por defecto (no hay toggle de modo claro) |
-| **Color de Fondo Base** | `slate-950` (#020617) |
-| **Color de Tarjetas/Paneles** | `slate-900` (#0f172a) con `backdrop-blur-sm` |
-| **Color de Bordes** | `slate-800` (#1e293b) |
-| **Color de Acento Principal** | `orange-500` → `amber-400` (gradiente para CTA) |
-| **Color de Éxito** | `emerald-500` |
-| **Color de Advertencia** | `amber-400` |
-| **Color de Error / Peligro** | `red-500` |
-| **Color de Información** | `blue-400` |
-| **Tipografía** | Geist Sans (Next.js default) o Inter como fallback |
-| **Transiciones** | 200ms ease-in-out para hover y estados |
-| **Notificaciones Toast** | Esquina superior derecha, fondo glassmorphism, icono + mensaje, auto-dismiss 4s |
-| **Badges de estado** | Pill redondeado, colores semánticos, texto en mayúsculas |
+| **Modo** | Claro premium (no hay toggle de modo oscuro) |
+| **Fondo global** | `radial-gradient(ellipse at top, var(--color-slate-50), var(--color-white))` definido en `globals.css` |
+| **Tarjetas / Paneles** | `bg-white/90` con `backdrop-blur-sm` (glassmorphism), borde `border-slate-200` |
+| **Inputs** | `bg-white/80` con `backdrop-blur-sm`, borde `border-slate-200`, focus `ring-orange-500/20` |
+| **Acento principal** | Gradiente naranja-ámbar: `from-orange-500 to-amber-400` para botones y badges activos |
+| **Éxito** | `emerald-500` |
+| **Advertencia** | `amber-400` |
+| **Error / Peligro** | `red-500` |
+| **Información** | `blue-400` |
+| **Violeta** | `violet-500` (para rol ALMACEN) |
+| **Tipografía** | Geist Sans (Next.js default) |
+| **Transiciones** | `200ms ease-in-out` para hover y estados |
+| **Notificaciones Toast** | Esquina superior derecha, glassmorphism, auto-dismiss 4s |
+| **Badges de estado** | Pill redondeado, colores semánticos (`success`, `warning`, `danger`, `info`, `neutral`, `violet`) |
+
+### 8.3 Sistema de Componentes UI
+
+Todos los componentes reutilizables están en `src/components/ui/`:
+
+| Componente | Archivo | Descripción |
+| :--- | :--- | :--- |
+| `GradientCard` | `GradientCard.tsx` | Tarjeta con fondo blanco semitransparente, glassmorphism, borde sutil y efecto hover. |
+| `GradientButton` | `GradientButton.tsx` | Botón con variantes: `primary` (gradiente naranja), `secondary` (gris), `ghost`, `danger`, `success`. |
+| `GlassInput` | `GlassInput.tsx` | Input con fondo blanco/80, backdrop-blur, soporte para icono izquierdo. Reemplaza `<input>` nativo. |
+| `StatusBadge` | `StatusBadge.tsx` | Badge semántico con dot. Variantes: `success`, `warning`, `danger`, `info`, `neutral`, `violet`. |
+| `AnimatedCounter` | `AnimatedCounter.tsx` | Contador animado de 0 al valor final. Usado en KPIs del Dashboard. |
+| `GradientModal` | `GradientModal.tsx` | Modal con overlay oscuro, panel glassmorphism y animación de escala. |
+| `GradientDrawer` | `GradientDrawer.tsx` | Panel lateral deslizable con glassmorphism. |
+| `GradientToast` | `GradientToast.tsx` | Sistema de notificaciones toast con tipos `success`, `error`, `warning`, `info`. |
 
 ---
 
