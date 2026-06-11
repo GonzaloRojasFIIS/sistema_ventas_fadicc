@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { dbService, Producto, Cliente, VentaComercial, CajaTurno } from '@/lib/db';
-import { generarPdfVenta } from '@/lib/pdfService';
+import { generarPdfVenta, generarPdfFactura } from '@/lib/pdfService';
 import GradientCard from '@/components/ui/GradientCard';
 import GradientButton from '@/components/ui/GradientButton';
 import GlassInput from '@/components/ui/GlassInput';
@@ -94,6 +94,25 @@ export default function CanalComercialPage() {
   const [categoria, setCategoria] = useState<string>('Todos');
   const [isLoading, setIsLoading] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+
+  // FACTURA extra fields
+  const [formaPago, setFormaPago] = useState<'CONTADO' | 'CREDITO'>('CONTADO');
+  const [guiaRemision, setGuiaRemision] = useState('');
+  const [ordenCompra, setOrdenCompra] = useState('');
+  const [moneda, setMoneda] = useState<'SOLES' | 'DOLARES'>('SOLES');
+  const [numeroCuotas, setNumeroCuotas] = useState(1);
+  const [fechaVencimientoCuota, setFechaVencimientoCuota] = useState('');
+  const [montoCuota, setMontoCuota] = useState(0);
+
+  // Quick client modal
+  const [showQuickClienteModal, setShowQuickClienteModal] = useState(false);
+  const [quickClienteTab, setQuickClienteTab] = useState<'persona' | 'empresa'>('empresa');
+  const [quickDni, setQuickDni] = useState('');
+  const [quickNombre, setQuickNombre] = useState('');
+  const [quickTelefonoPersona, setQuickTelefonoPersona] = useState('');
+  const [quickRazonSocial, setQuickRazonSocial] = useState('');
+  const [quickRuc, setQuickRuc] = useState('');
+  const [quickDireccion, setQuickDireccion] = useState('');
 
   // Refs for keyboard shortcuts
   const productSearchRef = useRef<HTMLInputElement>(null);
@@ -424,7 +443,7 @@ export default function CanalComercialPage() {
     if (numero_documento.length !== 8) { addAlerta('error', 'El DNI debe tener 8 dígitos.'); return; }
     if (!nombre.trim()) { addAlerta('error', 'Ingresa el nombre completo.'); return; }
     try {
-      const created = await dbService.createCliente({ tipo_documento: 'DNI', numero_documento, razon_social_o_nombre: nombre, telefono: telefono || undefined });
+      const created = await dbService.createCliente({ tipo_documento: 'DNI', numero_documento, razon_social_o_nombre: nombre, telefono: telefono || undefined, tipo_cliente: 'PERSONA' });
       setClientes((prev) => [...prev, created]);
       setSelectedCliente(created);
       setShowNuevoClienteModal(false);
@@ -441,11 +460,13 @@ export default function CanalComercialPage() {
     if (!razon_social.trim()) { addAlerta('error', 'Ingresa la razón social.'); return; }
     if (!nombre.trim()) { addAlerta('error', 'Debes registrar un contacto para la empresa.'); return; }
     try {
-      const empresa = await dbService.createEmpresa({ ruc, razon_social, telefono: telefono || undefined, email: email || undefined, direccion: direccion || undefined });
-      await dbService.createContacto({ empresa_id: empresa.id, nombre, cargo: cargo || undefined, telefono: telContacto || undefined, email: emailContacto || undefined });
-      const clienteLike: Cliente = { ...empresa, tipo_documento: 'RUC', numero_documento: empresa.ruc, razon_social_o_nombre: empresa.razon_social, contacto_nombre: nombre, contacto_cargo: cargo, contacto_telefono: telContacto, contacto_email: emailContacto };
-      setClientes((prev) => [...prev, clienteLike]);
-      setSelectedCliente(clienteLike);
+      const cliente = await dbService.createCliente({ tipo_documento: 'RUC', numero_documento: ruc, razon_social_o_nombre: razon_social, telefono: telefono || undefined, email: email || undefined, direccion: direccion || undefined, tipo_cliente: 'EMPRESA' });
+      const empresa = await dbService.getEmpresaByClienteId(cliente.id);
+      if (empresa) {
+        await dbService.createContacto({ empresa_id: empresa.id, nombre, cargo: cargo || undefined, telefono: telContacto || undefined, email: emailContacto || undefined });
+      }
+      setClientes((prev) => [...prev, cliente]);
+      setSelectedCliente(cliente);
       setShowNuevoClienteModal(false);
       setNuevaEmpresaForm({ ruc: '', razon_social: '', telefono: '', email: '', direccion: '' });
       setNuevoContactoForm({ nombre: '', cargo: '', telefono: '', email: '' });
@@ -456,6 +477,63 @@ export default function CanalComercialPage() {
   // =========================================================================
   // Confirm sale
   // =========================================================================
+
+  const executeVenta = async (cliente: Cliente) => {
+    if (!cajaActiva || !usuario) return;
+
+    try {
+      const detallesVenta = cart.map((item) => ({
+        producto_id: item.producto.id,
+        cantidad: item.cantidad,
+        precio_unitario: item.producto.precio_base,
+      }));
+
+      const payload: any = {
+        cliente_id: cliente.id,
+        vendedor_id: usuario.id,
+        caja_turno_id: cajaActiva.id,
+        tipo_comprobante: tipoComprobante,
+        total: cartTotal,
+        detalles: detallesVenta,
+        forma_pago: formaPago,
+        moneda: moneda,
+      };
+
+      if (tipoComprobante === 'FACTURA') {
+        payload.guia_remision = guiaRemision || undefined;
+        payload.orden_compra = ordenCompra || undefined;
+
+        if (formaPago === 'CREDITO' && fechaVencimientoCuota) {
+          payload.credito_total_cuotas = numeroCuotas;
+          payload.credito_cuotas = Array.from({ length: numeroCuotas }, (_, i) => ({
+            nro: i + 1,
+            fecha_vencimiento: fechaVencimientoCuota,
+            monto: montoCuota || cartTotal / numeroCuotas,
+          }));
+        }
+      }
+
+      const ticketNum = await dbService.registrarVentaDirecta(payload);
+
+      addAlerta('success', `Venta registrada: ${ticketNum}`);
+      setCart([]);
+      setSelectedCliente(null);
+      setFormaPago('CONTADO');
+      setGuiaRemision('');
+      setOrdenCompra('');
+      setMoneda('SOLES');
+      setNumeroCuotas(1);
+      setFechaVencimientoCuota('');
+      setMontoCuota(0);
+      loadInitialData();
+
+      const ventas = await dbService.getVentasRecientes(cajaActiva.id);
+      setVentasDelTurno(ventas);
+    } catch (err) {
+      console.error(err);
+      addAlerta('error', 'Error al procesar la venta.');
+    }
+  };
 
   const handleConfirmarVenta = async () => {
     if (!cajaActiva) return;
@@ -468,32 +546,83 @@ export default function CanalComercialPage() {
       return;
     }
 
+    if (tipoComprobante === 'FACTURA') {
+      const hasRuc = selectedCliente.numero_documento?.length === 11;
+      const hasDir = !!selectedCliente.direccion?.trim();
+      if (!hasRuc || !hasDir) {
+        setQuickRazonSocial(selectedCliente.razon_social_o_nombre || '');
+        setQuickRuc(hasRuc ? selectedCliente.numero_documento : '');
+        setQuickDireccion(selectedCliente.direccion || '');
+        setQuickClienteTab(selectedCliente.tipo_documento === 'DNI' ? 'persona' : 'empresa');
+        setShowQuickClienteModal(true);
+        return;
+      }
+    }
+
+    await executeVenta(selectedCliente);
+  };
+
+  const handleQuickClienteSave = async () => {
     try {
-      const detallesVenta = cart.map((item) => ({
-        producto_id: item.producto.id,
-        cantidad: item.cantidad,
-        precio_unitario: item.producto.precio_base,
-      }));
-
-      const ticketNum = await dbService.registrarVentaDirecta({
-        cliente_id: selectedCliente.id,
-        vendedor_id: usuario.id,
-        caja_turno_id: cajaActiva.id,
-        tipo_comprobante: tipoComprobante,
-        total: cartTotal,
-        detalles: detallesVenta,
-      });
-
-      addAlerta('success', `Venta registrada: ${ticketNum}`);
-      setCart([]);
-      setSelectedCliente(null);
-      loadInitialData();
-
-      const ventas = await dbService.getVentasRecientes(cajaActiva.id);
-      setVentasDelTurno(ventas);
-    } catch (err) {
-      console.error(err);
-      addAlerta('error', 'Error al procesar la venta.');
+      if (quickClienteTab === 'persona') {
+        if (quickDni.length !== 8) {
+          addAlerta('error', 'El DNI debe tener 8 dígitos.');
+          return;
+        }
+        if (!quickNombre.trim()) {
+          addAlerta('error', 'Ingresa el nombre completo.');
+          return;
+        }
+        if (!quickDireccion.trim()) {
+          addAlerta('error', 'Ingresa la dirección.');
+          return;
+        }
+        const created = await dbService.createCliente({
+          tipo_documento: 'DNI',
+          numero_documento: quickDni,
+          razon_social_o_nombre: quickNombre,
+          direccion: quickDireccion,
+          telefono: quickTelefonoPersona || undefined,
+          tipo_cliente: 'PERSONA',
+        });
+        setClientes((prev) => [...prev, created]);
+        setSelectedCliente(created);
+        setShowQuickClienteModal(false);
+        setQuickDni('');
+        setQuickNombre('');
+        setQuickDireccion('');
+        setQuickTelefonoPersona('');
+        await executeVenta(created);
+      } else {
+        if (!quickRazonSocial.trim()) {
+          addAlerta('error', 'Ingresa la Razón Social.');
+          return;
+        }
+        if (quickRuc.length !== 11) {
+          addAlerta('error', 'El RUC debe tener 11 dígitos.');
+          return;
+        }
+        if (!quickDireccion.trim()) {
+          addAlerta('error', 'Ingresa la dirección.');
+          return;
+        }
+        const created = await dbService.createCliente({
+          tipo_documento: 'RUC',
+          numero_documento: quickRuc,
+          razon_social_o_nombre: quickRazonSocial,
+          direccion: quickDireccion,
+          tipo_cliente: 'EMPRESA',
+        });
+        setClientes((prev) => [...prev, created]);
+        setSelectedCliente(created);
+        setShowQuickClienteModal(false);
+        setQuickRazonSocial('');
+        setQuickRuc('');
+        setQuickDireccion('');
+        await executeVenta(created);
+      }
+    } catch (err: any) {
+      addAlerta('error', err?.message || 'Error al registrar el cliente.');
     }
   };
 
@@ -785,9 +914,9 @@ export default function CanalComercialPage() {
                             <p className="text-[10px] font-mono text-slate-500 mt-0.5">
                               {selectedCliente.tipo_documento}: {selectedCliente.numero_documento}
                             </p>
-                            {selectedCliente.tipo_documento === 'RUC' && selectedCliente.contacto_nombre && (
+                            {selectedCliente.tipo_documento === 'RUC' && (
                               <p className="text-[10px] text-blue-600 mt-0.5">
-                                Contacto: {selectedCliente.contacto_nombre} {selectedCliente.contacto_cargo && `(${selectedCliente.contacto_cargo})`}
+                                Cliente Empresa
                               </p>
                             )}
                           </div>
@@ -867,9 +996,9 @@ export default function CanalComercialPage() {
                                     <span className="text-[10px] text-slate-500 font-mono">
                                       {c.tipo_documento}: {c.numero_documento}
                                     </span>
-                                    {c.tipo_documento === 'RUC' && c.contacto_nombre && (
+                                    {c.tipo_documento === 'RUC' && (
                                       <span className="text-[10px] text-blue-600">
-                                        Contacto: {c.contacto_nombre}
+                                        Cliente Empresa
                                       </span>
                                     )}
                                   </button>
@@ -970,6 +1099,93 @@ export default function CanalComercialPage() {
                     )}
                   </div>
 
+                  {/* FACTURA extra fields */}
+                  {tipoComprobante === 'FACTURA' && (
+                    <div className="border-t border-slate-100 pt-3 flex-shrink-0 space-y-3">
+                      <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+                        Datos de facturación
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[10px] font-semibold text-slate-500">Forma de pago</label>
+                          <select
+                            value={formaPago}
+                            onChange={(e) => setFormaPago(e.target.value as 'CONTADO' | 'CREDITO')}
+                            className="w-full mt-1 text-xs bg-white/70 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-300"
+                          >
+                            <option value="CONTADO">Contado</option>
+                            <option value="CREDITO">Crédito</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-semibold text-slate-500">Moneda</label>
+                          <select
+                            value={moneda}
+                            onChange={(e) => setMoneda(e.target.value as 'SOLES' | 'DOLARES')}
+                            className="w-full mt-1 text-xs bg-white/70 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-300"
+                          >
+                            <option value="SOLES">SOLES</option>
+                            <option value="DOLARES">DÓLARES</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <GlassInput
+                          type="text"
+                          value={guiaRemision}
+                          onChange={(e) => setGuiaRemision(e.target.value)}
+                          placeholder="Guía de remisión"
+                          className="text-xs"
+                        />
+                        <GlassInput
+                          type="text"
+                          value={ordenCompra}
+                          onChange={(e) => setOrdenCompra(e.target.value)}
+                          placeholder="Orden de compra"
+                          className="text-xs"
+                        />
+                      </div>
+
+                      {formaPago === 'CREDITO' && (
+                        <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2">
+                          <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Crédito</span>
+                          <div className="grid grid-cols-3 gap-2">
+                            <div>
+                              <label className="text-[10px] font-semibold text-slate-500">N° cuotas</label>
+                              <GlassInput
+                                type="number"
+                                min={1}
+                                value={numeroCuotas}
+                                onChange={(e) => setNumeroCuotas(Math.max(1, Number(e.target.value)))}
+                                className="text-xs mt-1"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-semibold text-slate-500">Vencimiento</label>
+                              <GlassInput
+                                type="date"
+                                value={fechaVencimientoCuota}
+                                onChange={(e) => setFechaVencimientoCuota(e.target.value)}
+                                className="text-xs mt-1"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-semibold text-slate-500">Monto por cuota</label>
+                              <GlassInput
+                                type="number"
+                                min={0}
+                                value={montoCuota || ''}
+                                onChange={(e) => setMontoCuota(Number(e.target.value))}
+                                placeholder={`Auto: ${(cartTotal / numeroCuotas).toFixed(2)}`}
+                                className="text-xs mt-1"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Resumen + Confirmar */}
                   <div className="border-t border-slate-200 pt-4 flex-shrink-0 space-y-4">
                     <div className="space-y-1.5 text-xs font-semibold">
@@ -1055,6 +1271,25 @@ export default function CanalComercialPage() {
                                 <ClockIcon size={12} />
                                 {formatTimePe(v.fecha_venta)}
                               </div>
+                              {v.tipo_comprobante === 'FACTURA' && (
+                                <div className="flex flex-wrap items-center gap-2 mt-1.5 text-[10px]">
+                                  {v.forma_pago && (
+                                    <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-medium border border-slate-200">
+                                      {v.forma_pago}
+                                    </span>
+                                  )}
+                                  {v.moneda && (
+                                    <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-medium border border-slate-200">
+                                      {v.moneda}
+                                    </span>
+                                  )}
+                                  {v.orden_compra && (
+                                    <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-medium border border-slate-200">
+                                      OC: {v.orden_compra}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
                             </div>
                             <div className="text-right shrink-0">
                               <p className="text-lg font-bold font-mono text-slate-900">
@@ -1187,6 +1422,125 @@ export default function CanalComercialPage() {
         )}
       </GradientModal>
 
+      {/* ==================== MODAL QUICK CLIENTE ==================== */}
+      <GradientModal
+        isOpen={showQuickClienteModal}
+        onClose={() => setShowQuickClienteModal(false)}
+        title="Registrar cliente rápido"
+        size="sm"
+        footer={
+          <>
+            <GradientButton variant="secondary" size="sm" onClick={() => setShowQuickClienteModal(false)}>
+              Cancelar
+            </GradientButton>
+            <GradientButton variant="primary" size="sm" onClick={handleQuickClienteSave}>
+              Guardar y continuar
+            </GradientButton>
+          </>
+        }
+      >
+        <div className="flex rounded-lg border border-slate-200 p-0.5 bg-slate-100 mb-4">
+          <button
+            type="button"
+            onClick={() => setQuickClienteTab('persona')}
+            className={`flex-1 py-1.5 text-xs rounded-md font-bold transition-all ${
+              quickClienteTab === 'persona' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            Persona Natural (DNI)
+          </button>
+          <button
+            type="button"
+            onClick={() => setQuickClienteTab('empresa')}
+            className={`flex-1 py-1.5 text-xs rounded-md font-bold transition-all ${
+              quickClienteTab === 'empresa' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            Empresa (RUC)
+          </button>
+        </div>
+
+        {quickClienteTab === 'persona' ? (
+          <div className="space-y-4">
+            <div>
+              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">DNI</label>
+              <GlassInput
+                type="text"
+                maxLength={8}
+                value={quickDni}
+                onChange={(e) => setQuickDni(e.target.value.replace(/\D/g, ''))}
+                placeholder="8 dígitos"
+                className="mt-1.5 font-mono"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Nombre completo</label>
+              <GlassInput
+                type="text"
+                value={quickNombre}
+                onChange={(e) => setQuickNombre(e.target.value)}
+                placeholder="Ej. Juan Pérez García"
+                className="mt-1.5"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Dirección</label>
+              <GlassInput
+                type="text"
+                value={quickDireccion}
+                onChange={(e) => setQuickDireccion(e.target.value)}
+                placeholder="Ej. Av. Arequipa 1234, Lima"
+                className="mt-1.5"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Teléfono</label>
+              <GlassInput
+                type="text"
+                value={quickTelefonoPersona}
+                onChange={(e) => setQuickTelefonoPersona(e.target.value)}
+                placeholder="Ej. 912449977"
+                className="mt-1.5"
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div>
+              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Razón Social</label>
+              <GlassInput
+                type="text"
+                value={quickRazonSocial}
+                onChange={(e) => setQuickRazonSocial(e.target.value)}
+                placeholder="Ej. Comercial Fénix S.A.C."
+                className="mt-1.5"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">RUC</label>
+              <GlassInput
+                type="text"
+                maxLength={11}
+                value={quickRuc}
+                onChange={(e) => setQuickRuc(e.target.value.replace(/\D/g, ''))}
+                placeholder="11 dígitos"
+                className="mt-1.5 font-mono"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Dirección</label>
+              <GlassInput
+                type="text"
+                value={quickDireccion}
+                onChange={(e) => setQuickDireccion(e.target.value)}
+                placeholder="Ej. Av. Javier Prado 1234, Lima"
+                className="mt-1.5"
+              />
+            </div>
+          </div>
+        )}
+      </GradientModal>
+
       {/* ==================== MODAL CIERRE CAJA ==================== */}
       <GradientModal
         isOpen={showCierreModal}
@@ -1297,12 +1651,36 @@ export default function CanalComercialPage() {
               <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
                 <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1">Cliente</p>
                 <p className="text-sm font-bold text-slate-900">{showVentaDetailModal.cliente_nombre || 'Cliente General'}</p>
+                {showVentaDetailModal.tipo_comprobante === 'FACTURA' && (
+                  <>
+                    <p className="text-[10px] font-mono text-slate-500 mt-1">RUC: {showVentaDetailModal.receptor_ruc || '—'}</p>
+                    <p className="text-[10px] text-slate-500 mt-0.5">{showVentaDetailModal.receptor_direccion || '—'}</p>
+                  </>
+                )}
               </div>
               <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
                 <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1">Vendedor</p>
                 <p className="text-sm font-semibold text-slate-800">{showVentaDetailModal.vendedor_nombre || 'Vendedor'}</p>
+                {showVentaDetailModal.tipo_comprobante === 'FACTURA' && (
+                  <>
+                    <p className="text-[10px] text-slate-500 mt-1">{showVentaDetailModal.emisor_razon_social || 'FADICC S.A.'}</p>
+                    <p className="text-[10px] font-mono text-slate-500 mt-0.5">RUC: {showVentaDetailModal.emisor_ruc || '—'}</p>
+                  </>
+                )}
               </div>
             </div>
+
+            {/* FACTURA extra info */}
+            {showVentaDetailModal.tipo_comprobante === 'FACTURA' && (
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
+                  <span><span className="text-slate-400">Forma de pago:</span> <span className="font-semibold text-slate-800">{showVentaDetailModal.forma_pago || '—'}</span></span>
+                  <span><span className="text-slate-400">Moneda:</span> <span className="font-semibold text-slate-800">{showVentaDetailModal.moneda || '—'}</span></span>
+                  <span><span className="text-slate-400">Guía remisión:</span> <span className="font-semibold text-slate-800">{showVentaDetailModal.guia_remision || '—'}</span></span>
+                  <span><span className="text-slate-400">Orden compra:</span> <span className="font-semibold text-slate-800">{showVentaDetailModal.orden_compra || '—'}</span></span>
+                </div>
+              </div>
+            )}
 
             {/* Productos como tarjetas */}
             <div>
@@ -1336,20 +1714,75 @@ export default function CanalComercialPage() {
 
             {/* Totales desglosados */}
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
-              <div className="flex justify-between text-sm text-slate-600">
-                <span>Subtotal</span>
-                <span className="font-mono">S/ {(showVentaDetailModal.total / 1.18).toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-sm text-slate-600">
-                <span>IGV (18%)</span>
-                <span className="font-mono">S/ {(showVentaDetailModal.total - showVentaDetailModal.total / 1.18).toFixed(2)}</span>
-              </div>
+              {showVentaDetailModal.tipo_comprobante === 'FACTURA' && (
+                <>
+                  <div className="flex justify-between text-sm text-slate-600">
+                    <span>Subtotal</span>
+                    <span className="font-mono">S/ {(showVentaDetailModal.subtotal ?? showVentaDetailModal.total / 1.18).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-slate-600">
+                    <span>Descuentos</span>
+                    <span className="font-mono">S/ {(showVentaDetailModal.descuentos || 0).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-slate-600">
+                    <span>Valor Venta</span>
+                    <span className="font-mono">S/ {(showVentaDetailModal.valor_venta ?? showVentaDetailModal.total / 1.18).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-slate-600">
+                    <span>IGV (18%)</span>
+                    <span className="font-mono">S/ {(showVentaDetailModal.igv ?? (showVentaDetailModal.total - showVentaDetailModal.total / 1.18)).toFixed(2)}</span>
+                  </div>
+                </>
+              )}
+              {showVentaDetailModal.tipo_comprobante === 'BOLETA' && (
+                <>
+                  <div className="flex justify-between text-sm text-slate-600">
+                    <span>Subtotal</span>
+                    <span className="font-mono">S/ {(showVentaDetailModal.total / 1.18).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-slate-600">
+                    <span>IGV (18%)</span>
+                    <span className="font-mono">S/ {(showVentaDetailModal.total - showVentaDetailModal.total / 1.18).toFixed(2)}</span>
+                  </div>
+                </>
+              )}
               <div className="flex justify-between items-center pt-2 border-t border-dashed border-slate-300">
                 <span className="text-base font-bold text-slate-900">TOTAL</span>
                 <span className="text-2xl font-bold font-mono text-orange-600">
-                  S/ {showVentaDetailModal.total.toFixed(2)}
+                  S/ {(showVentaDetailModal.importe_total ?? showVentaDetailModal.total).toFixed(2)}
                 </span>
               </div>
+              {showVentaDetailModal.monto_letras && (
+                <p className="text-[10px] text-slate-500">Son: {showVentaDetailModal.monto_letras}</p>
+              )}
+
+              {showVentaDetailModal.tipo_comprobante === 'FACTURA' && showVentaDetailModal.detraccion_monto && (
+                <div className="pt-2 border-t border-dashed border-slate-200 space-y-1">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Detracción</p>
+                  <div className="flex justify-between text-xs text-slate-600">
+                    <span>Leyenda</span>
+                    <span>{showVentaDetailModal.detraccion_leyenda}</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-slate-600">
+                    <span>Monto</span>
+                    <span className="font-mono">S/ {showVentaDetailModal.detraccion_monto.toFixed(2)}</span>
+                  </div>
+                </div>
+              )}
+
+              {showVentaDetailModal.tipo_comprobante === 'FACTURA' && showVentaDetailModal.forma_pago === 'CREDITO' && showVentaDetailModal.credito_cuotas && (
+                <div className="pt-2 border-t border-dashed border-slate-200 space-y-1">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Crédito</p>
+                  <div className="flex justify-between text-xs text-slate-600">
+                    <span>Monto neto</span>
+                    <span className="font-mono">S/ {(showVentaDetailModal.credito_monto_neto || 0).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-slate-600">
+                    <span>Cuotas</span>
+                    <span>{showVentaDetailModal.credito_total_cuotas}</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Botones de acción */}
@@ -1360,10 +1793,14 @@ export default function CanalComercialPage() {
                 className="flex-1"
                 onClick={async () => {
                   const ventaCompleta = await dbService.getVentaById(showVentaDetailModal.id);
-                  if (ventaCompleta) {
-                    generarPdfVenta(ventaCompleta);
-                  } else {
+                  if (!ventaCompleta) {
                     addAlerta('error', 'No se pudo cargar los detalles de la venta.');
+                    return;
+                  }
+                  if (ventaCompleta.tipo_comprobante === 'FACTURA') {
+                    generarPdfFactura(ventaCompleta);
+                  } else {
+                    generarPdfVenta(ventaCompleta);
                   }
                 }}
               >

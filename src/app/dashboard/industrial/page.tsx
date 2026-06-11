@@ -635,6 +635,15 @@ function WizardModal({
     return d.toISOString().split('T')[0];
   });
   const [loading, setLoading] = useState(false);
+  const [showNuevoCliente, setShowNuevoCliente] = useState(false);
+  const [nuevoClienteDoc, setNuevoClienteDoc] = useState('');
+  const [nuevoClienteNombre, setNuevoClienteNombre] = useState('');
+  const [nuevoClienteTel, setNuevoClienteTel] = useState('');
+  const [nuevoClienteEmail, setNuevoClienteEmail] = useState('');
+  const [nuevoClienteDir, setNuevoClienteDir] = useState('');
+  const [nuevoClienteTipo, setNuevoClienteTipo] = useState<'RUC' | 'DNI'>('RUC');
+  const [nuevoClienteError, setNuevoClienteError] = useState('');
+  const [nuevoClienteLoading, setNuevoClienteLoading] = useState(false);
 
   const filteredClients = useMemo(() => {
     const q = clientSearch.toLowerCase().trim();
@@ -704,6 +713,50 @@ function WizardModal({
   const handleClose = () => {
     reset();
     onClose();
+  };
+
+  const handleCrearClienteWizard = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setNuevoClienteError('');
+    const doc = nuevoClienteDoc.trim();
+    const nombre = nuevoClienteNombre.trim();
+    if (!doc || !nombre) {
+      setNuevoClienteError('Documento y nombre son obligatorios.');
+      return;
+    }
+    if (nuevoClienteTipo === 'RUC' && doc.length !== 11) {
+      setNuevoClienteError('El RUC debe tener 11 dígitos.');
+      return;
+    }
+    if (nuevoClienteTipo === 'DNI' && doc.length !== 8) {
+      setNuevoClienteError('El DNI debe tener 8 dígitos.');
+      return;
+    }
+    setNuevoClienteLoading(true);
+    try {
+      const created = await dbService.createCliente({
+        tipo_documento: nuevoClienteTipo,
+        numero_documento: doc,
+        razon_social_o_nombre: nombre,
+        telefono: nuevoClienteTel.trim() || undefined,
+        email: nuevoClienteEmail.trim() || undefined,
+        direccion: nuevoClienteDir.trim() || undefined,
+        tipo_cliente: nuevoClienteTipo === 'RUC' ? 'EMPRESA' : 'PERSONA',
+      });
+      setSelectedClient(created);
+      setShowNuevoCliente(false);
+      setNuevoClienteDoc('');
+      setNuevoClienteNombre('');
+      setNuevoClienteTel('');
+      setNuevoClienteEmail('');
+      setNuevoClienteDir('');
+      setNuevoClienteTipo('RUC');
+      setNuevoClienteError('');
+    } catch (err: any) {
+      setNuevoClienteError(err?.message || 'Error al crear cliente.');
+    } finally {
+      setNuevoClienteLoading(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -809,7 +862,7 @@ function WizardModal({
                 <div className="text-sm text-slate-500 text-center py-4">No se encontraron clientes</div>
               )}
             </div>
-            <GradientButton variant="ghost" size="sm" className="w-full" onClick={() => {}}>
+            <GradientButton variant="ghost" size="sm" className="w-full" onClick={() => setShowNuevoCliente(true)}>
               <Plus className="w-4 h-4" />
               Crear nuevo cliente
             </GradientButton>
@@ -944,14 +997,9 @@ function WizardModal({
                 {selectedClient?.razon_social_o_nombre}
               </div>
               <div className="text-xs text-slate-500 font-mono">{selectedClient?.numero_documento}</div>
-              {selectedClient?.contacto_nombre && (
+              {selectedClient?.tipo_cliente === 'EMPRESA' && (
                 <div className="border-t border-slate-100 pt-2 mt-2">
-                  <div className="text-xs font-semibold text-slate-600">Contacto: {selectedClient.contacto_nombre}</div>
-                  {selectedClient.contacto_cargo && <div className="text-[10px] text-slate-500">{selectedClient.contacto_cargo}</div>}
-                  <div className="text-[10px] text-slate-400">
-                    {selectedClient.contacto_telefono && <span>{selectedClient.contacto_telefono}</span>}
-                    {selectedClient.contacto_email && <span className="ml-2">{selectedClient.contacto_email}</span>}
-                  </div>
+                  <div className="text-xs font-semibold text-slate-600">Cliente Empresa</div>
                 </div>
               )}
             </GradientCard>
@@ -1035,6 +1083,70 @@ function WizardModal({
           </div>
         </div>
       </div>
+
+      {/* Modal crear cliente rápido */}
+      <GradientModal
+        isOpen={showNuevoCliente}
+        onClose={() => setShowNuevoCliente(false)}
+        title="Nuevo cliente"
+        size="sm"
+        footer={
+          <>
+            <GradientButton variant="ghost" size="md" onClick={() => setShowNuevoCliente(false)}>
+              Cancelar
+            </GradientButton>
+            <GradientButton variant="primary" size="md" onClick={handleCrearClienteWizard} disabled={nuevoClienteLoading}>
+              {nuevoClienteLoading ? 'Guardando...' : 'Crear cliente'}
+            </GradientButton>
+          </>
+        }
+      >
+        <form onSubmit={handleCrearClienteWizard} className="space-y-3">
+          <div className="flex rounded-lg border border-slate-200 p-0.5 bg-slate-100">
+            {(['RUC', 'DNI'] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setNuevoClienteTipo(t)}
+                className={`flex-1 py-1.5 text-xs rounded-md font-bold transition-all ${
+                  nuevoClienteTipo === t ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                {t === 'RUC' ? 'Empresa (RUC)' : 'Persona (DNI)'}
+              </button>
+            ))}
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1">{nuevoClienteTipo}</label>
+            <GlassInput
+              value={nuevoClienteDoc}
+              onChange={(e) => setNuevoClienteDoc(e.target.value.replace(/\D/g, ''))}
+              placeholder={nuevoClienteTipo === 'RUC' ? '11 dígitos' : '8 dígitos'}
+              maxLength={nuevoClienteTipo === 'RUC' ? 11 : 8}
+              className="font-mono"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1">{nuevoClienteTipo === 'RUC' ? 'Razón social' : 'Nombre completo'}</label>
+            <GlassInput value={nuevoClienteNombre} onChange={(e) => setNuevoClienteNombre(e.target.value)} placeholder={nuevoClienteTipo === 'RUC' ? 'Ej: Constructora del Norte' : 'Ej: Juan Pérez'} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Teléfono</label>
+              <GlassInput value={nuevoClienteTel} onChange={(e) => setNuevoClienteTel(e.target.value)} placeholder="987654321" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Email</label>
+              <GlassInput value={nuevoClienteEmail} onChange={(e) => setNuevoClienteEmail(e.target.value)} placeholder="correo@mail.com" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1">Dirección</label>
+            <GlassInput value={nuevoClienteDir} onChange={(e) => setNuevoClienteDir(e.target.value)} placeholder="Av. Principal 123" />
+          </div>
+          {nuevoClienteError && <p className="text-sm text-red-600 font-medium">{nuevoClienteError}</p>}
+        </form>
+      </GradientModal>
     </GradientModal>
   );
 }

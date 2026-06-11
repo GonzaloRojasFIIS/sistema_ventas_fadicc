@@ -234,7 +234,6 @@ export default function DashboardPage() {
   const [topProductos, setTopProductos] = useState<TopProducto[]>([]);
   const [actividades, setActividades] = useState<Actividad[]>([]);
   const [proformas, setProformas] = useState<Proforma[]>([]);
-  const [vendedores, setVendedores] = useState<VendedorPerformance[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateTime, setDateTime] = useState<string>('');
@@ -276,14 +275,13 @@ export default function DashboardPage() {
     async function load() {
       if (!usuario || usuario.rol !== 'ADMIN') return;
       try {
-        const [kpiRes, ventasRes, topProdRes, prodRes, actRes, profRes, vendRes] = await Promise.all([
+        const [kpiRes, ventasRes, topProdRes, prodRes, actRes, profRes] = await Promise.all([
           dbService.getKpis(),
           dbService.getVentasPorDia(),
           dbService.getTopProductos(),
           dbService.getProducts(),
           dbService.getActividadReciente(),
           dbService.getProformas(),
-          dbService.getVendedoresPerformance(),
         ]);
         setKpis(kpiRes);
         setVentasPorDia(ventasRes);
@@ -291,7 +289,6 @@ export default function DashboardPage() {
         setProductos(prodRes);
         setActividades(actRes);
         setProformas(profRes);
-        setVendedores(vendRes);
       } catch (err) {
         console.error('Error al cargar dashboard:', err);
       } finally {
@@ -648,9 +645,9 @@ export default function DashboardPage() {
       {/* ============================================================== */}
       {/*  SECCIÓN INFERIOR — 3 COLUMNAS                                  */}
       {/* ============================================================== */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Col 1 — Top Productos (5/12) */}
-        <div className="lg:col-span-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Col 1 — Top Productos */}
+        <div>
           <GradientCard className="h-full">
             <div className="p-6">
               <div className="flex items-center justify-between mb-5">
@@ -710,8 +707,8 @@ export default function DashboardPage() {
           </GradientCard>
         </div>
 
-        {/* Col 2 — Timeline de Actividad (4/12) */}
-        <div className="lg:col-span-4">
+        {/* Col 2 — Timeline de Actividad */}
+        <div>
           <GradientCard className="h-full">
             <div className="p-6">
               <div className="flex items-center gap-2 mb-5">
@@ -763,64 +760,6 @@ export default function DashboardPage() {
           </GradientCard>
         </div>
 
-        {/* Col 3 — Rendimiento de Vendedores (3/12) */}
-        <div className="lg:col-span-3">
-          <GradientCard className="h-full">
-            <div className="p-6">
-              <div className="flex items-center gap-2 mb-5">
-                <Users className="w-5 h-5 text-emerald-500" />
-                <h3 className="text-base font-bold text-slate-800">Rendimiento</h3>
-              </div>
-              {loading ? (
-                <div className="space-y-4">
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <div key={i} className="space-y-2">
-                      <div className="h-4 w-3/4 bg-slate-100/60 rounded animate-pulse" />
-                      <div className="h-2 w-full bg-slate-100/60 rounded animate-pulse" />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-5">
-                  {vendedores.map((v, i) => (
-                    <div key={i}>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-sm font-bold text-slate-800 truncate max-w-[70%]">
-                          {v.nombre}
-                        </span>
-                        <span className="text-xs font-bold text-slate-500 font-mono">
-                          {v.porcentaje.toFixed(1)}%
-                        </span>
-                      </div>
-                      <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200/60">
-                        <div
-                          className={`h-full rounded-full ${
-                            v.porcentaje >= 90
-                              ? 'bg-emerald-500'
-                              : v.porcentaje >= 70
-                              ? 'bg-blue-500'
-                              : v.porcentaje >= 50
-                              ? 'bg-amber-500'
-                              : 'bg-red-500'
-                          }`}
-                          style={{ width: `${Math.min(v.porcentaje, 100)}%` }}
-                        />
-                      </div>
-                      <div className="flex justify-between mt-1">
-                        <span className="text-[10px] text-slate-400 font-medium">
-                          S/ {v.real.toLocaleString('es-PE')}
-                        </span>
-                        <span className="text-[10px] text-slate-400 font-medium">
-                          meta S/ {v.meta.toLocaleString('es-PE')}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </GradientCard>
-        </div>
       </div>
     </div>
   );

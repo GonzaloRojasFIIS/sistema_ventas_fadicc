@@ -242,3 +242,270 @@ export async function generarPdfProforma(data: ProformaPdfData) {
   addFooter(doc, 285);
   doc.save(`PROFORMA_${data.codigo_proforma}.pdf`);
 }
+
+export async function generarPdfFactura(data: {
+  numero_comprobante: string;
+  fecha_venta: string;
+  cliente_nombre?: string;
+  receptor_ruc?: string;
+  receptor_direccion?: string;
+  vendedor_nombre?: string;
+  emisor_razon_social?: string;
+  emisor_direccion?: string;
+  emisor_ruc?: string;
+  forma_pago?: string;
+  moneda?: string;
+  guia_remision?: string;
+  orden_compra?: string;
+  total: number;
+  subtotal?: number;
+  igv?: number;
+  valor_venta?: number;
+  monto_letras?: string;
+  detraccion_leyenda?: string;
+  detraccion_bien_servicio?: string;
+  detraccion_medio_pago?: string;
+  detraccion_cta_banco_nacion?: string;
+  detraccion_porcentaje?: number;
+  detraccion_monto?: number;
+  credito_monto_neto?: number;
+  credito_total_cuotas?: number;
+  credito_cuotas?: { nro: number; fecha_vencimiento: string; monto: number }[];
+  detalles?: {
+    nombre?: string;
+    sku?: string;
+    cantidad: number;
+    precio_unitario: number;
+    subtotal: number;
+  }[];
+}) {
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const logoBase64 = await loadLogoBase64();
+
+  let y = 10;
+
+  // Logo (top left)
+  if (logoBase64) {
+    doc.addImage(logoBase64, 'PNG', 14, y, 40, 12);
+  } else {
+    doc.setFillColor(249, 115, 22);
+    doc.roundedRect(14, y, 14, 14, 2, 2, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('F', 18.5, y + 11);
+    doc.setFontSize(16);
+    doc.setTextColor(234, 88, 12);
+    doc.text('FADICC', 30, y + 6);
+  }
+
+  // Emisor (left side)
+  const emisorRazonSocial = data.emisor_razon_social || 'SERVICIOS GENERALES ALASKA S.R.LTDA.';
+  const emisorDireccion = data.emisor_direccion || 'PRL.ALEJANDRO BERTELLO URB. SAN REMO ET.II MZA. G LOTE. 13 AV.CANTA CALLAO CON PROL.BERTELLO, SAN MARTIN DE PORRES - LIMA - LIMA';
+  const emisorRuc = data.emisor_ruc || '20335737319';
+
+  doc.setFontSize(9);
+  doc.setTextColor(15, 23, 42);
+  doc.setFont('helvetica', 'bold');
+  doc.text('EMISOR', 14, y + 22);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Razón Social: ${emisorRazonSocial}`, 14, y + 27);
+  doc.text(`Dirección: ${emisorDireccion}`, 14, y + 32);
+  doc.text(`RUC: ${emisorRuc}`, 14, y + 37);
+
+  // Header Box (top right)
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(130, y + 18, 66, 28, 2, 2, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(15, 23, 42);
+  doc.text(`RUC: ${emisorRuc}`, 196, y + 26, { align: 'right' });
+  doc.setFontSize(11);
+  doc.setTextColor(234, 88, 12);
+  doc.text('FACTURA ELECTRÓNICA', 196, y + 32, { align: 'right' });
+  doc.setFontSize(14);
+  doc.text(data.numero_comprobante, 196, y + 40, { align: 'right' });
+
+  y += 48;
+
+  // Información General
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(15, 23, 42);
+  doc.text('INFORMACIÓN GENERAL', 14, y);
+  doc.setDrawColor(226, 232, 240);
+  doc.line(14, y + 2, 196, y + 2);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  const fechaEmision = new Date(data.fecha_venta).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  doc.text(`Fecha de Emisión: ${fechaEmision}`, 14, y + 8);
+  doc.text(`Forma de pago: ${data.forma_pago || '—'}`, 90, y + 8);
+  doc.text(`Guía de Remisión Remitente: ${data.guia_remision || '—'}`, 14, y + 13);
+  doc.text(`Orden de Compra: ${data.orden_compra || '—'}`, 90, y + 13);
+  doc.text(`Tipo de Moneda: ${data.moneda || '—'}`, 14, y + 18);
+
+  y += 24;
+
+  // Información del Receptor
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.text('INFORMACIÓN DEL RECEPTOR', 14, y);
+  doc.line(14, y + 2, 196, y + 2);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.text(`Señor(es): ${data.cliente_nombre || '—'}`, 14, y + 8);
+  doc.text(`RUC: ${data.receptor_ruc || '—'}`, 14, y + 13);
+  doc.text(`Dirección: ${data.receptor_direccion || '—'}`, 14, y + 18);
+
+  y += 24;
+
+  // Detalle de Productos/Servicios
+  const body = (data.detalles || []).map(d => [
+    d.cantidad.toString(),
+    'UNIDAD',
+    d.nombre || 'Producto',
+    `S/ ${d.precio_unitario.toFixed(2)}`,
+    '0.00',
+  ]);
+
+  if (body.length === 0) body.push(['—', '—', 'Sin productos registrados', '—', '0.00']);
+
+  autoTable(doc, {
+    startY: y,
+    head: [['Cantidad', 'Unidad de Medida', 'Descripción', 'Valor Unitario', 'ICBPER']],
+    body,
+    theme: 'grid',
+    headStyles: {
+      fillColor: [249, 115, 22],
+      textColor: [255, 255, 255],
+      fontSize: 9,
+      fontStyle: 'bold',
+    },
+    bodyStyles: { fontSize: 9, textColor: [15, 23, 42] },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
+    columnStyles: {
+      0: { cellWidth: 20, halign: 'center' },
+      1: { cellWidth: 30, halign: 'center' },
+      2: { cellWidth: 'auto' },
+      3: { cellWidth: 35, halign: 'right' },
+      4: { cellWidth: 30, halign: 'right' },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  let finalY = (doc as any).lastAutoTable?.finalY || y + 40;
+  y = finalY + 8;
+
+  // Resumen de Importes
+  const resumenX = 120;
+  const labelX = 170;
+  const valueX = 196;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(15, 23, 42);
+  doc.text('RESUMEN DE IMPORTES', resumenX, y);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+
+  const rows: [string, number][] = [
+    ['Sub Total Ventas', data.subtotal || 0],
+    ['Anticipos', 0],
+    ['Descuentos', 0],
+    ['Valor Venta', data.valor_venta || 0],
+    ['ISC', 0],
+    ['IGV', data.igv || 0],
+    ['ICBPER', 0],
+    ['Otros Cargos', 0],
+    ['Otros Tributos', 0],
+    ['Monto de redondeo', 0],
+  ];
+
+  let rowY = y + 6;
+  rows.forEach(([label, value]) => {
+    doc.setTextColor(100, 116, 139);
+    doc.text(label, labelX, rowY, { align: 'right' });
+    doc.setTextColor(15, 23, 42);
+    doc.text(`S/ ${Number(value).toFixed(2)}`, valueX, rowY, { align: 'right' });
+    rowY += 5;
+  });
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(234, 88, 12);
+  doc.setFontSize(11);
+  doc.text('Importe Total', labelX, rowY + 2, { align: 'right' });
+  doc.text(`S/ ${data.total.toFixed(2)}`, valueX, rowY + 2, { align: 'right' });
+
+  rowY += 8;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`Valor de Venta de Operaciones Gratuitas: S/ 0.00`, resumenX, rowY);
+  rowY += 5;
+  if (data.monto_letras) {
+    doc.text(`Monto en letras: ${data.monto_letras}`, resumenX, rowY);
+  }
+
+  y = rowY + 6;
+
+  // Información de la Detracción
+  if (data.detraccion_monto) {
+    if (y > 250) { doc.addPage(); y = 20; }
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(15, 23, 42);
+    doc.text('INFORMACIÓN DE LA DETRACCIÓN', 14, y);
+    doc.line(14, y + 2, 196, y + 2);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.text(`Leyenda: ${data.detraccion_leyenda || 'Operación sujeta al Sistema de Pago de Obligaciones Tributarias con el Gobierno Central'}`, 14, y + 8);
+    doc.text(`Bien o Servicio: ${data.detraccion_bien_servicio || '020 Mantenimiento y reparación de bienes muebles'}`, 14, y + 13);
+    doc.text(`Medio de pago: ${data.detraccion_medio_pago || '003 Transferencia de fondos'}`, 14, y + 18);
+    doc.text(`Nro. Cta. Banco de la Nación: ${data.detraccion_cta_banco_nacion || '00007003714'}`, 90, y + 8);
+    doc.text(`Porcentaje de detracción: ${(data.detraccion_porcentaje || 12).toFixed(2)}`, 14, y + 23);
+    doc.text(`Monto detracción: S/ ${(data.detraccion_monto || 0).toFixed(2)}`, 90, y + 23);
+    y += 30;
+  }
+
+  // Información del Crédito
+  if (data.credito_cuotas && data.credito_cuotas.length > 0) {
+    if (y > 240) { doc.addPage(); y = 20; }
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(15, 23, 42);
+    doc.text('INFORMACIÓN DEL CRÉDITO', 14, y);
+    doc.line(14, y + 2, 196, y + 2);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.text(`Monto neto pendiente de pago: S/ ${(data.credito_monto_neto || 0).toFixed(2)}`, 14, y + 8);
+    doc.text(`Total de Cuotas: ${data.credito_total_cuotas || 0}`, 90, y + 8);
+
+    const cuotasBody = data.credito_cuotas.map(c => [
+      c.nro.toString(),
+      new Date(c.fecha_vencimiento).toLocaleDateString('es-PE'),
+      `S/ ${c.monto.toFixed(2)}`,
+    ]);
+
+    autoTable(doc, {
+      startY: y + 12,
+      head: [['Nro', 'Fecha Vencimiento', 'Monto']],
+      body: cuotasBody,
+      theme: 'grid',
+      headStyles: { fillColor: [59, 130, 246], textColor: [255, 255, 255], fontSize: 9, fontStyle: 'bold' },
+      bodyStyles: { fontSize: 9, textColor: [15, 23, 42] },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      columnStyles: {
+        0: { cellWidth: 20, halign: 'center' },
+        1: { cellWidth: 'auto', halign: 'center' },
+        2: { cellWidth: 40, halign: 'right' },
+      },
+      margin: { left: 14, right: 14 },
+    });
+  }
+
+  addFooter(doc, 285);
+  doc.save(`FACTURA_${data.numero_comprobante}.pdf`);
+}

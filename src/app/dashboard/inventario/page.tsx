@@ -8,6 +8,7 @@ import GlassInput from '@/components/ui/GlassInput';
 import StatusBadge from '@/components/ui/StatusBadge';
 import GradientModal from '@/components/ui/GradientModal';
 import GradientDrawer from '@/components/ui/GradientDrawer';
+import { useSession } from '@/context/SessionContext';
 
 /* ── Helpers ── */
 function getStockVariant(stock: number, minimo: number): 'success' | 'warning' | 'danger' | 'neutral' {
@@ -30,6 +31,7 @@ function getRowBg(stock: number, minimo: number): string {
 
 /* ── Página ── */
 export default function InventarioPage() {
+  const { usuario } = useSession();
   const [productos, setProductos] = useState<ProductoDb[]>([]);
   const [movimientos, setMovimientos] = useState<MovimientoStock[]>([]);
   const [categoriaActiva, setCategoriaActiva] = useState('Todas');
@@ -40,7 +42,8 @@ export default function InventarioPage() {
   const [productoMovimiento, setProductoMovimiento] = useState<ProductoDb | null>(null);
   const [tipoMovimiento, setTipoMovimiento] = useState<'ENTRADA' | 'SALIDA'>('ENTRADA');
   const [cantidadMovimiento, setCantidadMovimiento] = useState('');
-  const [motivoMovimiento, setMotivoMovimiento] = useState('');
+  const [motivoMovimiento, setMotivoMovimiento] = useState<MovimientoStock['motivo']>('COMPRA_PROVEEDOR');
+  const [observacionMovimiento, setObservacionMovimiento] = useState('');
   const [errorMovimiento, setErrorMovimiento] = useState('');
 
   const [drawerHistorialOpen, setDrawerHistorialOpen] = useState(false);
@@ -51,6 +54,9 @@ export default function InventarioPage() {
   const [movimientosKardex, setMovimientosKardex] = useState<MovimientoStock[]>([]);
   const [kardexCalculado, setKardexCalculado] = useState<{ mov: MovimientoStock; saldo: number }[]>([]);
   const [kardexLoading, setKardexLoading] = useState(false);
+
+  const [dbStatus, setDbStatus] = useState<'conectado' | 'desconectado' | 'verificando'>('verificando');
+  const [localMovsCount, setLocalMovsCount] = useState(0);
 
   /* Carga inicial desde dbService (Supabase o localStorage) */
   useEffect(() => {
@@ -72,24 +78,31 @@ export default function InventarioPage() {
     loadData();
   }, []);
 
+  // Diagnóstico de conexión
+  useEffect(() => {
+    const check = () => {
+      setDbStatus(dbService.isRealDb() ? 'conectado' : 'desconectado');
+      const stored = typeof window !== 'undefined' ? localStorage.getItem('fadicc_movimientos_stock') : null;
+      setLocalMovsCount(stored ? JSON.parse(stored).length : 0);
+    };
+    check();
+    const id = setInterval(check, 3000);
+    return () => clearInterval(id);
+  }, []);
+
   useEffect(() => {
     async function loadKardex() {
-      if (!productoKardexId) {
-        setMovimientosKardex([]);
-        setKardexCalculado([]);
-        return;
-      }
       setKardexLoading(true);
       try {
-        const movs = await dbService.getMovimientosStock(productoKardexId);
+        const movs = productoKardexId
+          ? await dbService.getMovimientosStock(productoKardexId)
+          : await dbService.getMovimientosStock();
         const ordenados = [...movs].sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
-        let saldo = 0;
-        const calculados = ordenados.map((m, i) => {
-          if (i === 0) {
-            saldo = m.cantidad_anterior + m.diferencia;
-          } else {
-            saldo = saldo + m.diferencia;
-          }
+        const saldosPorProducto: Record<string, number> = {};
+        const calculados = ordenados.map((m) => {
+          const saldoAnterior = saldosPorProducto[m.producto_id] ?? m.cantidad_anterior;
+          const saldo = saldoAnterior + m.diferencia;
+          saldosPorProducto[m.producto_id] = saldo;
           return { mov: m, saldo };
         });
         setMovimientosKardex(ordenados);
@@ -101,7 +114,7 @@ export default function InventarioPage() {
       }
     }
     loadKardex();
-  }, [productoKardexId]);
+  }, [productoKardexId, movimientos]);
 
   const categorias = useMemo(() => {
     const cats = new Set(productos.map((p) => p.categoria || 'General'));
@@ -127,11 +140,24 @@ export default function InventarioPage() {
       .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
   }, [movimientos, productoHistorial]);
 
+  const MOTIVOS_ENTRADA: { value: MovimientoStock['motivo']; label: string }[] = [
+    { value: 'COMPRA_PROVEEDOR', label: 'Compra a proveedor' },
+    { value: 'DEVOLUCION_CLIENTE', label: 'Devolución de cliente' },
+    { value: 'AJUSTE_CONTEO', label: 'Ajuste de conteo' },
+  ];
+
+  const MOTIVOS_SALIDA: { value: MovimientoStock['motivo']; label: string }[] = [
+    { value: 'MERMA', label: 'Merma / Pérdida' },
+    { value: 'AJUSTE_CONTEO', label: 'Ajuste de conteo' },
+    { value: 'VENTA', label: 'Venta' },
+  ];
+
   function abrirModalMovimiento(producto: ProductoDb) {
     setProductoMovimiento(producto);
     setTipoMovimiento('ENTRADA');
     setCantidadMovimiento('');
-    setMotivoMovimiento('');
+    setMotivoMovimiento('COMPRA_PROVEEDOR');
+    setObservacionMovimiento('');
     setErrorMovimiento('');
     setModalMovimientoOpen(true);
   }
@@ -149,11 +175,6 @@ export default function InventarioPage() {
       setErrorMovimiento('Ingresa una cantidad válida mayor a 0.');
       return;
     }
-    if (!motivoMovimiento.trim()) {
-      setErrorMovimiento('Ingresa el motivo del movimiento.');
-      return;
-    }
-
     const nuevoStock =
       tipoMovimiento === 'ENTRADA'
         ? productoMovimiento.stock_actual + cantidad
@@ -168,12 +189,12 @@ export default function InventarioPage() {
       await dbService.addMovimientoStock({
         producto_id: productoMovimiento.id,
         tipo: tipoMovimiento,
-        motivo: tipoMovimiento === 'ENTRADA' ? 'COMPRA_PROVEEDOR' : 'AJUSTE_CONTEO',
+        motivo: motivoMovimiento,
         cantidad_anterior: productoMovimiento.stock_actual,
         cantidad_nueva: nuevoStock,
         diferencia: tipoMovimiento === 'ENTRADA' ? cantidad : -cantidad,
-        usuario_id: 'u1', // usuario actual simplificado
-        observacion: motivoMovimiento.trim(),
+        usuario_id: usuario?.id || 'u1',
+        observacion: observacionMovimiento.trim() || undefined,
       });
 
       // Recargar datos
@@ -185,8 +206,9 @@ export default function InventarioPage() {
       setMovimientos(movs);
       setModalMovimientoOpen(false);
     } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Error al registrar el movimiento.';
       console.error(err);
-      setErrorMovimiento('Error al registrar el movimiento.');
+      setErrorMovimiento(msg);
     }
   }
 
@@ -199,6 +221,15 @@ export default function InventarioPage() {
           <p className="text-sm text-slate-500 mt-1">Gestión de productos y movimientos de stock</p>
         </div>
         <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 text-xs">
+            <span className={`inline-block w-2 h-2 rounded-full ${dbStatus === 'conectado' ? 'bg-emerald-500' : dbStatus === 'desconectado' ? 'bg-red-500' : 'bg-amber-400'} animate-pulse`} />
+            <span className="text-slate-600 font-medium">
+              {dbStatus === 'conectado' ? 'Supabase conectado' : dbStatus === 'desconectado' ? 'Sin conexión a Supabase' : 'Verificando...'}
+            </span>
+            {dbStatus === 'desconectado' && (
+              <span className="text-amber-600 bg-amber-50 px-2 py-0.5 rounded">Cache local: {localMovsCount} movs</span>
+            )}
+          </div>
           <GlassInput
             placeholder="Buscar SKU, nombre o categoría..."
             value={busqueda}
@@ -347,7 +378,7 @@ export default function InventarioPage() {
                 value={productoKardexId}
                 onChange={(e) => setProductoKardexId(e.target.value)}
               >
-                <option value="">Selecciona un producto...</option>
+                <option value="">Todos los productos</option>
                 {productos.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.sku} — {p.nombre}
@@ -360,6 +391,21 @@ export default function InventarioPage() {
                 Stock actual: <strong className="text-slate-900">{productos.find(p => p.id === productoKardexId)?.stock_actual ?? '—'}</strong>
               </div>
             )}
+            <div className="flex-1" />
+            <GradientButton
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                const ev = { target: { value: productoKardexId } } as React.ChangeEvent<HTMLSelectElement>;
+                setProductoKardexId(ev.target.value);
+              }}
+              disabled={kardexLoading}
+            >
+              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Refrescar
+            </GradientButton>
           </div>
 
           {kardexLoading ? (
@@ -372,6 +418,7 @@ export default function InventarioPage() {
                 <thead>
                   <tr className="bg-slate-50/60 border-b border-slate-100">
                     <th className="text-left px-4 py-3 font-semibold text-slate-700">Fecha</th>
+                    {!productoKardexId && <th className="text-left px-4 py-3 font-semibold text-slate-700">Producto</th>}
                     <th className="text-left px-4 py-3 font-semibold text-slate-700">Tipo</th>
                     <th className="text-left px-4 py-3 font-semibold text-slate-700">Motivo</th>
                     <th className="text-right px-4 py-3 font-semibold text-slate-700">Cantidad</th>
@@ -382,6 +429,11 @@ export default function InventarioPage() {
                   {kardexCalculado.map(({ mov, saldo }) => (
                     <tr key={mov.id} className="border-b border-slate-100 hover:bg-slate-50/40">
                       <td className="px-4 py-3 text-slate-600">{new Date(mov.fecha).toLocaleDateString('es-PE')}</td>
+                      {!productoKardexId && (
+                        <td className="px-4 py-3 text-slate-800 font-medium">
+                          {mov.producto_nombre ?? productos.find(p => p.id === mov.producto_id)?.nombre ?? mov.producto_id}
+                        </td>
+                      )}
                       <td className="px-4 py-3">
                         <StatusBadge variant={mov.tipo === 'ENTRADA' ? 'success' : mov.tipo === 'SALIDA' ? 'danger' : 'info'} dot={false}>
                           {mov.tipo}
@@ -396,8 +448,8 @@ export default function InventarioPage() {
                   ))}
                   {kardexCalculado.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="px-4 py-8 text-center text-slate-400">
-                        {productoKardexId ? 'No hay movimientos registrados para este producto.' : 'Selecciona un producto para ver su kardex.'}
+                      <td colSpan={productoKardexId ? 5 : 6} className="px-4 py-8 text-center text-slate-400">
+                        No hay movimientos registrados.
                       </td>
                     </tr>
                   )}
@@ -461,15 +513,29 @@ export default function InventarioPage() {
               />
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Motivo / Observación</label>
-            <textarea
-              className="w-full bg-white/80 backdrop-blur-sm border border-slate-200 rounded-lg text-sm text-slate-800 placeholder:text-slate-400 outline-none transition-all duration-150 focus:bg-white focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20 px-3.5 py-2.5 resize-none"
-              rows={3}
-              value={motivoMovimiento}
-              onChange={(e) => setMotivoMovimiento(e.target.value)}
-              placeholder="Describe el motivo del movimiento..."
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Motivo</label>
+              <select
+                className="w-full bg-white/80 backdrop-blur-sm border border-slate-200 rounded-lg text-sm text-slate-800 outline-none transition-all duration-150 focus:bg-white focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20 px-3.5 py-2.5"
+                value={motivoMovimiento}
+                onChange={(e) => setMotivoMovimiento(e.target.value as MovimientoStock['motivo'])}
+              >
+                {(tipoMovimiento === 'ENTRADA' ? MOTIVOS_ENTRADA : MOTIVOS_SALIDA).map((m) => (
+                  <option key={m.value} value={m.value}>{m.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Observación</label>
+              <textarea
+                className="w-full bg-white/80 backdrop-blur-sm border border-slate-200 rounded-lg text-sm text-slate-800 placeholder:text-slate-400 outline-none transition-all duration-150 focus:bg-white focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20 px-3.5 py-2.5 resize-none"
+                rows={1}
+                value={observacionMovimiento}
+                onChange={(e) => setObservacionMovimiento(e.target.value)}
+                placeholder="Detalle opcional..."
+              />
+            </div>
           </div>
           {errorMovimiento && (
             <p className="text-sm text-red-600 font-medium">{errorMovimiento}</p>
