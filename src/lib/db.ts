@@ -165,6 +165,9 @@ export interface ProformaDetalle {
 export interface Proforma {
   id: string;
   cliente_id: string;
+  contacto_id?: string;
+  contacto_nombre?: string;
+  contacto_email?: string;
   cliente_nombre?: string;
   cliente_email?: string;
   representante_id: string;
@@ -1374,6 +1377,9 @@ export const dbService = {
         .from('proformas')
         .insert([{
           cliente_id: proforma.cliente_id,
+          contacto_id: proforma.contacto_id || null,
+          contacto_nombre: proforma.contacto_nombre || null,
+          contacto_email: proforma.contacto_email || null,
           representante_id: proforma.representante_id,
           codigo_proforma: code,
           estado: 'PENDIENTE',

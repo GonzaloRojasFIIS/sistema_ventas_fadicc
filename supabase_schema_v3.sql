@@ -151,6 +151,9 @@ CREATE TABLE venta_detalles (
 CREATE TABLE proformas (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     cliente_id UUID NOT NULL REFERENCES clientes(id),
+    contacto_id UUID REFERENCES contactos(id),
+    contacto_nombre VARCHAR(255),
+    contacto_email VARCHAR(255),
     cliente_nombre VARCHAR(255),
     cliente_email VARCHAR(255),
     representante_id UUID REFERENCES usuarios(id),

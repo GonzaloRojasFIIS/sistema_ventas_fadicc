@@ -644,14 +644,16 @@ function WizardModal({
   const [nuevoClienteTipo, setNuevoClienteTipo] = useState<'RUC' | 'DNI'>('RUC');
   const [nuevoClienteError, setNuevoClienteError] = useState('');
   const [nuevoClienteLoading, setNuevoClienteLoading] = useState(false);
+  const [selectedContacto, setSelectedContacto] = useState<{ id: string; nombre: string; cargo?: string; email?: string } | null>(null);
+  const [contactosEmpresa, setContactosEmpresa] = useState<{ id: string; nombre: string; cargo?: string; email?: string; es_principal?: boolean }[]>([]);
+  const [loadingContactos, setLoadingContactos] = useState(false);
 
   const filteredClients = useMemo(() => {
     const q = clientSearch.toLowerCase().trim();
-    if (!q) return clients.filter(c => c.tipo_documento === 'RUC');
+    if (!q) return clients;
     return clients.filter(
       c =>
-        c.tipo_documento === 'RUC' &&
-        (c.razon_social_o_nombre.toLowerCase().includes(q) || c.numero_documento.includes(q))
+        c.razon_social_o_nombre.toLowerCase().includes(q) || c.numero_documento.includes(q)
     );
   }, [clients, clientSearch]);
 
@@ -700,6 +702,8 @@ function WizardModal({
     setStep(1);
     setClientSearch('');
     setSelectedClient(null);
+    setSelectedContacto(null);
+    setContactosEmpresa([]);
     setLines([]);
     setProductSearch('');
     setDueDate(() => {
@@ -708,6 +712,31 @@ function WizardModal({
       return d.toISOString().split('T')[0];
     });
     setLoading(false);
+  };
+
+  const handleSelectClient = async (cliente: Cliente) => {
+    setSelectedClient(cliente);
+    setSelectedContacto(null);
+    setContactosEmpresa([]);
+    if (cliente.tipo_documento === 'RUC') {
+      setLoadingContactos(true);
+      try {
+        const empresa = await dbService.getEmpresaByClienteId(cliente.id);
+        if (empresa) {
+          const contactos = await dbService.getContactosByEmpresaId(empresa.id);
+          setContactosEmpresa(contactos);
+          // Auto-seleccionar el principal si existe
+          const principal = contactos.find(c => c.es_principal);
+          if (principal) {
+            setSelectedContacto({ id: principal.id, nombre: principal.nombre, cargo: principal.cargo, email: principal.email });
+          }
+        }
+      } catch {
+        // Silencioso
+      } finally {
+        setLoadingContactos(false);
+      }
+    }
   };
 
   const handleClose = () => {
@@ -765,6 +794,9 @@ function WizardModal({
     try {
       await dbService.createProforma({
         cliente_id: selectedClient.id,
+        contacto_id: selectedContacto?.id || undefined,
+        contacto_nombre: selectedContacto?.nombre || undefined,
+        contacto_email: selectedContacto?.email || undefined,
         representante_id: representanteId,
         fecha_vencimiento: new Date(dueDate).toISOString(),
         total,
@@ -844,7 +876,7 @@ function WizardModal({
               {filteredClients.map(c => (
                 <div
                   key={c.id}
-                  onClick={() => setSelectedClient(c)}
+                  onClick={() => handleSelectClient(c)}
                   className={`p-3 rounded-lg border cursor-pointer transition-colors ${
                     selectedClient?.id === c.id
                       ? 'border-orange-400 bg-orange-50/50'
@@ -862,6 +894,39 @@ function WizardModal({
                 <div className="text-sm text-slate-500 text-center py-4">No se encontraron clientes</div>
               )}
             </div>
+
+            {/* Contactos de la empresa (solo si es RUC) */}
+            {selectedClient?.tipo_documento === 'RUC' && (
+              <div className="space-y-2">
+                <div className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Contacto de la empresa</div>
+                {loadingContactos ? (
+                  <div className="text-sm text-slate-400 py-2">Cargando contactos...</div>
+                ) : contactosEmpresa.length > 0 ? (
+                  <div className="space-y-1.5">
+                    {contactosEmpresa.map(co => (
+                      <div
+                        key={co.id}
+                        onClick={() => setSelectedContacto({ id: co.id, nombre: co.nombre, cargo: co.cargo, email: co.email })}
+                        className={`p-2.5 rounded-lg border cursor-pointer transition-colors ${
+                          selectedContacto?.id === co.id
+                            ? 'border-orange-400 bg-orange-50/50'
+                            : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm font-semibold text-slate-800">{co.nombre}</div>
+                          {co.es_principal && <span className="text-[10px] font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded">Principal</span>}
+                        </div>
+                        <div className="text-xs text-slate-500">{co.cargo || '—'} {co.email && `· ${co.email}`}</div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-sm text-slate-400 py-2">No hay contactos registrados para esta empresa.</div>
+                )}
+              </div>
+            )}
+
             <GradientButton variant="ghost" size="sm" className="w-full" onClick={() => setShowNuevoCliente(true)}>
               <Plus className="w-4 h-4" />
               Crear nuevo cliente
@@ -997,9 +1062,10 @@ function WizardModal({
                 {selectedClient?.razon_social_o_nombre}
               </div>
               <div className="text-xs text-slate-500 font-mono">{selectedClient?.numero_documento}</div>
-              {selectedClient?.tipo_cliente === 'EMPRESA' && (
+              {selectedClient?.tipo_cliente === 'EMPRESA' && selectedContacto && (
                 <div className="border-t border-slate-100 pt-2 mt-2">
-                  <div className="text-xs font-semibold text-slate-600">Cliente Empresa</div>
+                  <div className="text-xs font-semibold text-slate-600">Contacto: {selectedContacto.nombre}</div>
+                  {selectedContacto.cargo && <div className="text-[10px] text-slate-500">{selectedContacto.cargo}</div>}
                 </div>
               )}
             </GradientCard>
