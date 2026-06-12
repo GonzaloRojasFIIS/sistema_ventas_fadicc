@@ -1,7 +1,7 @@
 const { spawn } = require('child_process');
 const path = require('path');
 
-const projectDir = path.resolve(__dirname);
+const projectDir = path.resolve(__dirname, '..');
 const out = require('fs').openSync(path.join(projectDir, 'next-dev-out.log'), 'a');
 const err = require('fs').openSync(path.join(projectDir, 'next-dev-err.log'), 'a');
 
