@@ -8,7 +8,7 @@
 - **Modo visual:** Claro premium con degradados sutiles (`radial-gradient` global), glassmorphism en tarjetas (`bg-white/90 backdrop-blur-sm`), acento naranja-ámbar (`from-orange-500 to-amber-400`).
 - **Componentes base:** Todos los componentes UI reutilizables están en `src/components/ui/` (GradientCard, GradientButton, GlassInput, StatusBadge, AnimatedCounter, GradientModal, GradientDrawer, GradientToast).
 - **Estilos globales:** Definidos en `src/app/globals.css` con `@theme` de Tailwind v4. NO usar `tailwind.config.js`.
-- **Datos:** `src/lib/db.ts` encapsula todo el acceso a datos con patrón dual-mode (Supabase primario / localStorage fallback).
+- **Datos:** `src/services/` encapsula la lógica de negocio con patrón dual-mode (Supabase primario / localStorage fallback). `src/repositories/` maneja la conexión a Supabase y localStorage.
 - **Sesión:** Manejada por `SessionContext` con persistencia en localStorage.
 - **Íconos:** Usar `src/components/Icons.tsx` (SVGs inline). NO instalar librerías de íconos adicionales sin consultar.
 
@@ -23,6 +23,7 @@
 | `/dashboard/produccion` | Producción (stepper, filtros, métricas) | ADMIN, PRODUCCION, ALMACEN |
 | `/dashboard/inventario` | Inventario (stock, movimientos, alertas) | ADMIN, ALMACEN, VENDEDOR, REPRESENTANTE |
 | `/dashboard/clientes` | Clientes (ficha, historial, paginación) | ADMIN, VENDEDOR, REPRESENTANTE |
+| `/dashboard/mis-ventas` | Mis Ventas (historial comercial + industrial) | ADMIN, VENDEDOR, REPRESENTANTE |
 | `/dashboard/admin` | Administración (usuarios, roles) | ADMIN |
 
 ## Reglas de Código

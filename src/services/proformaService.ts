@@ -161,3 +161,38 @@ export async function getProformasVencidas(): Promise<Proforma[]> {
   const now = new Date().toISOString();
   return profs.filter(p => p.estado === 'PENDIENTE' || p.estado === 'EN_NEGOCIACION').filter(p => p.fecha_vencimiento < now);
 }
+
+export async function getProformasByRepresentante(representanteId: string, limit = 100): Promise<Proforma[]> {
+  if (supabase) {
+    const { data, error } = await supabase
+      .from('proformas')
+      .select(`
+        *,
+        clientes(razon_social_o_nombre),
+        usuarios!proformas_representante_id_fkey(nombre),
+        proforma_detalles(*, productos(nombre, sku))
+      `)
+      .eq('representante_id', representanteId)
+      .order('fecha_emision', { ascending: false })
+      .limit(limit);
+
+    if (!error && data) {
+      return data.map((p: any) => ({
+        ...p,
+        cliente_nombre: p.clientes?.razon_social_o_nombre || 'Cliente',
+        representante_nombre: p.usuarios?.nombre || 'Representante',
+        detalles: p.proforma_detalles ? p.proforma_detalles.map((d: any) => ({
+          producto_id: d.producto_id,
+          nombre: d.productos?.nombre || 'Producto',
+          sku: d.productos?.sku || '',
+          cantidad: d.cantidad,
+          precio_pactado: d.precio_pactado,
+          subtotal: d.subtotal,
+        })) : [],
+      }));
+    }
+  }
+
+  const profs = getLocalData<Proforma[]>('fadicc_proformas', []);
+  return profs.filter(p => p.representante_id === representanteId).slice(0, limit);
+}
