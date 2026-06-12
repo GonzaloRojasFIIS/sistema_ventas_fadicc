@@ -3,7 +3,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { useRouter } from 'next/navigation';
-import { dbService, VentaComercial, TopProducto, Producto } from '@/lib/db';
+import { VentaComercial, TopProducto, Producto } from '@/types';
+import { getVentasRecientes } from '@/services/ventaService';
+import { getTopProductos } from '@/services/kpiService';
+import { getProducts } from '@/services/productoService';
 import GradientCard from '@/components/ui/GradientCard';
 import GradientButton from '@/components/ui/GradientButton';
 import GlassInput from '@/components/ui/GlassInput';
@@ -151,9 +154,9 @@ export default function ReportesPage() {
       if (!usuario || usuario.rol !== 'ADMIN') return;
       try {
         const [ventasRes, topRes, prodRes] = await Promise.all([
-          dbService.getVentasRecientes(undefined, 500),
-          dbService.getTopProductos(),
-          dbService.getProducts(),
+          getVentasRecientes(undefined, 500),
+          getTopProductos(),
+          getProducts(),
         ]);
         setVentas(ventasRes);
         setTopProductos(topRes);

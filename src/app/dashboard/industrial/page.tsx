@@ -31,12 +31,11 @@ import GradientModal from '@/components/ui/GradientModal';
 import GradientDrawer from '@/components/ui/GradientDrawer';
 import GradientToast, { Alert } from '@/components/ui/GradientToast';
 
-import {
-  Proforma,
-  Producto,
-  Cliente,
-  dbService,
-} from '@/lib/db';
+import { Proforma, Producto, Cliente } from '@/types';
+import { getProformas, updateProformaEstado, createProforma } from '@/services/proformaService';
+import { getProducts } from '@/services/productoService';
+import { getClients, createCliente, getEmpresaByClienteId, getContactosByEmpresaId } from '@/services/clienteService';
+import { convertToOrder } from '@/services/ordenService';
 import { generarPdfProforma } from '@/lib/pdfService';
 import { enviarProformaEmailApi } from '@/lib/emailClient';
 import { useSession } from '@/context/SessionContext';
@@ -721,9 +720,9 @@ function WizardModal({
     if (cliente.tipo_documento === 'RUC') {
       setLoadingContactos(true);
       try {
-        const empresa = await dbService.getEmpresaByClienteId(cliente.id);
+        const empresa = await getEmpresaByClienteId(cliente.id);
         if (empresa) {
-          const contactos = await dbService.getContactosByEmpresaId(empresa.id);
+          const contactos = await getContactosByEmpresaId(empresa.id);
           setContactosEmpresa(contactos);
           // Auto-seleccionar el principal si existe
           const principal = contactos.find(c => c.es_principal);
@@ -763,7 +762,7 @@ function WizardModal({
     }
     setNuevoClienteLoading(true);
     try {
-      const created = await dbService.createCliente({
+      const created = await createCliente({
         tipo_documento: nuevoClienteTipo,
         numero_documento: doc,
         razon_social_o_nombre: nombre,
@@ -792,7 +791,7 @@ function WizardModal({
     if (!selectedClient) return;
     setLoading(true);
     try {
-      await dbService.createProforma({
+      await createProforma({
         cliente_id: selectedClient.id,
         contacto_id: selectedContacto?.id || undefined,
         contacto_nombre: selectedContacto?.nombre || undefined,
@@ -1251,9 +1250,9 @@ export default function IndustrialPage() {
     setLoading(true);
     try {
       const [p, pr, cl] = await Promise.all([
-        dbService.getProformas(),
-        dbService.getProducts(),
-        dbService.getClients(),
+        getProformas(),
+        getProducts(),
+        getClients(),
       ]);
       setProformas(p);
       setProducts(pr);
@@ -1300,7 +1299,7 @@ export default function IndustrialPage() {
   const handleUpdateState = async (id: string, estado: EstadoProforma) => {
     setFadingIds(prev => new Set(prev).add(id));
     setTimeout(async () => {
-      await dbService.updateProformaEstado(id, estado);
+      await updateProformaEstado(id, estado);
       setProformas(prev => prev.map(p => (p.id === id ? { ...p, estado } : p)));
       setFadingIds(prev => {
         const n = new Set(prev);
@@ -1317,7 +1316,7 @@ export default function IndustrialPage() {
     setFadingIds(prev => new Set(prev).add(id));
     setTimeout(async () => {
       try {
-        await dbService.convertToOrder(id, prof);
+        await convertToOrder(id, prof);
         setProformas(prev => prev.map(p => (p.id === id ? { ...p, estado: 'APROBADA' } : p)));
         addAlert('success', 'Proforma convertida a orden de pedido');
       } catch {

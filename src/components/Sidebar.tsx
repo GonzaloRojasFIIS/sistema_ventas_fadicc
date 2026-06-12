@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSession } from '@/context/SessionContext';
-import { Usuario } from '@/lib/db';
+import { Usuario } from '@/types';
 import {
   DashboardIcon,
   ComercialIcon,

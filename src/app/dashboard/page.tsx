@@ -4,7 +4,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { useRouter } from 'next/navigation';
 import {
-  dbService,
   KpiData,
   VentaPorDia,
   TopProducto,
@@ -12,7 +11,10 @@ import {
   VendedorPerformance,
   Proforma,
   Producto,
-} from '@/lib/db';
+} from '@/types';
+import { getKpis, getVentasPorDia, getTopProductos, getActividadReciente } from '@/services/kpiService';
+import { getProducts } from '@/services/productoService';
+import { getProformas } from '@/services/proformaService';
 import GradientCard from '@/components/ui/GradientCard';
 import AnimatedCounter from '@/components/ui/AnimatedCounter';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -276,12 +278,12 @@ export default function DashboardPage() {
       if (!usuario || usuario.rol !== 'ADMIN') return;
       try {
         const [kpiRes, ventasRes, topProdRes, prodRes, actRes, profRes] = await Promise.all([
-          dbService.getKpis(),
-          dbService.getVentasPorDia(),
-          dbService.getTopProductos(),
-          dbService.getProducts(),
-          dbService.getActividadReciente(),
-          dbService.getProformas(),
+          getKpis(),
+          getVentasPorDia(),
+          getTopProductos(),
+          getProducts(),
+          getActividadReciente(),
+          getProformas(),
         ]);
         setKpis(kpiRes);
         setVentasPorDia(ventasRes);

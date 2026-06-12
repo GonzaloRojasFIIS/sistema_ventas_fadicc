@@ -2,7 +2,10 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useSession } from '@/context/SessionContext';
-import { dbService, Producto, Cliente, VentaComercial, CajaTurno } from '@/lib/db';
+import { Producto, Cliente, VentaComercial, CajaTurno } from '@/types';
+import { getProducts } from '@/services/productoService';
+import { getClients, createCliente, getEmpresaByClienteId, createContacto } from '@/services/clienteService';
+import { getActiveCaja, openCaja, closeCaja, getVentasRecientes, getVentaById, registrarVentaDirecta } from '@/services/ventaService';
 import { generarPdfVenta, generarPdfFactura } from '@/lib/pdfService';
 import GradientCard from '@/components/ui/GradientCard';
 import GradientButton from '@/components/ui/GradientButton';
@@ -219,7 +222,7 @@ export default function CanalComercialPage() {
   const handleVerDetalleVenta = useCallback(async (venta: VentaComercial) => {
     setIsLoading(true);
     try {
-      const completa = await dbService.getVentaById(venta.id);
+      const completa = await getVentaById(venta.id);
       if (completa) {
         setShowVentaDetailModal(completa);
       } else {
@@ -244,8 +247,8 @@ export default function CanalComercialPage() {
     setIsLoading(true);
     try {
       const [prods, cls] = await Promise.all([
-        dbService.getProducts(categoria === 'Todos' ? undefined : categoria),
-        dbService.getClients(),
+        getProducts(categoria === 'Todos' ? undefined : categoria),
+        getClients(),
       ]);
       setProductos(prods);
       setClientes(cls);
@@ -269,10 +272,10 @@ export default function CanalComercialPage() {
     async function checkCaja() {
       if (!usuario) return;
       if (cajaId) {
-        const caja = await dbService.getActiveCaja(usuario.id);
+        const caja = await getActiveCaja(usuario.id);
         if (caja) {
           setCajaActiva(caja);
-          const ventas = await dbService.getVentasRecientes(caja.id);
+          const ventas = await getVentasRecientes(caja.id);
           setVentasDelTurno(ventas);
         } else {
           setCajaId(null);
@@ -337,7 +340,7 @@ export default function CanalComercialPage() {
       return;
     }
     try {
-      const caja = await dbService.openCaja(usuario.id, montoApertura);
+      const caja = await openCaja(usuario.id, montoApertura);
       setCajaId(caja.id);
       setCajaActiva(caja);
       addAlerta('success', `Turno abierto con S/ ${montoApertura.toFixed(2)}`);
@@ -349,7 +352,7 @@ export default function CanalComercialPage() {
   const handleCerrarTurno = async () => {
     if (!cajaActiva) return;
     try {
-      const success = await dbService.closeCaja(cajaActiva.id, montoCierreReal);
+      const success = await closeCaja(cajaActiva.id, montoCierreReal);
       if (success) {
         setCajaId(null);
         setCajaActiva(null);
@@ -443,7 +446,7 @@ export default function CanalComercialPage() {
     if (numero_documento.length !== 8) { addAlerta('error', 'El DNI debe tener 8 dígitos.'); return; }
     if (!nombre.trim()) { addAlerta('error', 'Ingresa el nombre completo.'); return; }
     try {
-      const created = await dbService.createCliente({ tipo_documento: 'DNI', numero_documento, razon_social_o_nombre: nombre, telefono: telefono || undefined, tipo_cliente: 'PERSONA' });
+      const created = await createCliente({ tipo_documento: 'DNI', numero_documento, razon_social_o_nombre: nombre, telefono: telefono || undefined, tipo_cliente: 'PERSONA' });
       setClientes((prev) => [...prev, created]);
       setSelectedCliente(created);
       setShowNuevoClienteModal(false);
@@ -460,10 +463,10 @@ export default function CanalComercialPage() {
     if (!razon_social.trim()) { addAlerta('error', 'Ingresa la razón social.'); return; }
     if (!nombre.trim()) { addAlerta('error', 'Debes registrar un contacto para la empresa.'); return; }
     try {
-      const cliente = await dbService.createCliente({ tipo_documento: 'RUC', numero_documento: ruc, razon_social_o_nombre: razon_social, telefono: telefono || undefined, email: email || undefined, direccion: direccion || undefined, tipo_cliente: 'EMPRESA' });
-      const empresa = await dbService.getEmpresaByClienteId(cliente.id);
+      const cliente = await createCliente({ tipo_documento: 'RUC', numero_documento: ruc, razon_social_o_nombre: razon_social, telefono: telefono || undefined, email: email || undefined, direccion: direccion || undefined, tipo_cliente: 'EMPRESA' });
+      const empresa = await getEmpresaByClienteId(cliente.id);
       if (empresa) {
-        await dbService.createContacto({ empresa_id: empresa.id, nombre, cargo: cargo || undefined, telefono: telContacto || undefined, email: emailContacto || undefined });
+        await createContacto({ empresa_id: empresa.id, nombre, cargo: cargo || undefined, telefono: telContacto || undefined, email: emailContacto || undefined });
       }
       setClientes((prev) => [...prev, cliente]);
       setSelectedCliente(cliente);
@@ -513,7 +516,7 @@ export default function CanalComercialPage() {
         }
       }
 
-      const ticketNum = await dbService.registrarVentaDirecta(payload);
+      const ticketNum = await registrarVentaDirecta(payload);
 
       addAlerta('success', `Venta registrada: ${ticketNum}`);
       setCart([]);
@@ -527,7 +530,7 @@ export default function CanalComercialPage() {
       setMontoCuota(0);
       loadInitialData();
 
-      const ventas = await dbService.getVentasRecientes(cajaActiva.id);
+      const ventas = await getVentasRecientes(cajaActiva.id);
       setVentasDelTurno(ventas);
     } catch (err) {
       console.error(err);
@@ -577,7 +580,7 @@ export default function CanalComercialPage() {
           addAlerta('error', 'Ingresa la dirección.');
           return;
         }
-        const created = await dbService.createCliente({
+        const created = await createCliente({
           tipo_documento: 'DNI',
           numero_documento: quickDni,
           razon_social_o_nombre: quickNombre,
@@ -606,7 +609,7 @@ export default function CanalComercialPage() {
           addAlerta('error', 'Ingresa la dirección.');
           return;
         }
-        const created = await dbService.createCliente({
+        const created = await createCliente({
           tipo_documento: 'RUC',
           numero_documento: quickRuc,
           razon_social_o_nombre: quickRazonSocial,
@@ -1792,7 +1795,7 @@ export default function CanalComercialPage() {
                 size="sm"
                 className="flex-1"
                 onClick={async () => {
-                  const ventaCompleta = await dbService.getVentaById(showVentaDetailModal.id);
+                  const ventaCompleta = await getVentaById(showVentaDetailModal.id);
                   if (!ventaCompleta) {
                     addAlerta('error', 'No se pudo cargar los detalles de la venta.');
                     return;

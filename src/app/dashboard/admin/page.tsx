@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { dbService } from '@/lib/db';
+
 import GradientCard from '@/components/ui/GradientCard';
 import GradientButton from '@/components/ui/GradientButton';
 import GlassInput from '@/components/ui/GlassInput';

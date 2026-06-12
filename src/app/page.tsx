@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from '@/context/SessionContext';
-import { dbService } from '@/lib/db';
+import { recuperarPassword } from '@/services/usuarioService';
 import GlassInput from '@/components/ui/GlassInput';
 import GradientButton from '@/components/ui/GradientButton';
 import GradientModal from '@/components/ui/GradientModal';
@@ -81,7 +81,7 @@ export default function LoginPage() {
     setRecoverLoading(true);
     setRecoverMessage('');
     try {
-      await dbService.recuperarPassword(recoverEmail);
+      await recuperarPassword(recoverEmail);
       setRecoverMessage('Si el email existe en nuestro sistema, recibirás instrucciones para restablecer tu contraseña.');
       setRecoverEmail('');
     } catch {

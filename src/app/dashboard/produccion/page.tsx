@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSession } from '@/context/SessionContext';
-import { dbService, OrdenPedido } from '@/lib/db';
+import { OrdenPedido } from '@/types';
+import { getOrders, updateOrderStatus } from '@/services/ordenService';
 import GradientCard from '@/components/ui/GradientCard';
 import GradientButton from '@/components/ui/GradientButton';
 import GlassInput from '@/components/ui/GlassInput';
@@ -79,7 +80,7 @@ export default function PlantaDespachosPage() {
   /* data load */
   const loadOrders = async () => {
     try {
-      const ords = await dbService.getOrders();
+      const ords = await getOrders();
       setOrdenes(ords);
     } catch {
       addAlerta('error', 'Error al cargar las órdenes de producción.');
@@ -184,7 +185,7 @@ export default function PlantaDespachosPage() {
     }
 
     try {
-      const success = await dbService.updateOrderStatus(orderId, nextStatus);
+      const success = await updateOrderStatus(orderId, nextStatus);
       if (success) {
         addAlerta('success', `Pedido actualizado a: ${nextStatus.replace(/_/g, ' ')}`);
         loadOrders();

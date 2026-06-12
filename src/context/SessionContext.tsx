@@ -1,7 +1,9 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { dbService, Usuario } from '@/lib/db';
+import { Usuario } from '@/types';
+import { login as loginUsuario } from '@/services/usuarioService';
+import { getActiveCaja } from '@/services/ventaService';
 
 interface SessionContextType {
   usuario: Usuario | null;
@@ -34,7 +36,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           if (storedCaja) {
             setCajaIdState(storedCaja);
           } else if (parsedUser.rol === 'VENDEDOR' || parsedUser.rol === 'ADMIN') {
-            const caja = await dbService.getActiveCaja(parsedUser.id);
+            const caja = await getActiveCaja(parsedUser.id);
             if (caja) {
               setCajaIdState(caja.id);
               localStorage.setItem('fadicc_session_caja', caja.id);
@@ -55,7 +57,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     try {
-      const user = await dbService.login(email, password);
+      const user = await loginUsuario(email, password);
       if (!user) return false;
 
       setUsuario(user);
@@ -63,7 +65,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
       // Cargar caja activa si aplica
       if (user.rol === 'VENDEDOR' || user.rol === 'ADMIN') {
-        const caja = await dbService.getActiveCaja(user.id);
+        const caja = await getActiveCaja(user.id);
         if (caja) {
           setCajaIdState(caja.id);
           localStorage.setItem('fadicc_session_caja', caja.id);

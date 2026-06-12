@@ -8,7 +8,8 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import GradientModal from '@/components/ui/GradientModal';
 import GradientDrawer from '@/components/ui/GradientDrawer';
 import AnimatedCounter from '@/components/ui/AnimatedCounter';
-import { dbService, VentaComercial, Proforma as ProformaReal } from '@/lib/db';
+import { VentaComercial, Proforma as ProformaReal } from '@/types';
+import { getClients, updateCliente, createCliente, getEmpresaByClienteId, createContacto, getClienteHistorial, getClientePreferencias } from '@/services/clienteService';
 import { enviarCatalogoEmailApi } from '@/lib/emailClient';
 
 /* ── Tipos ── */
@@ -144,7 +145,7 @@ export default function ClientesPage() {
     async function loadClients() {
       setIsLoading(true);
       try {
-        const dbClients = await dbService.getClients();
+        const dbClients = await getClients();
         const mapped = dbClients.map(mapDbClientToUi);
         setClientes(mapped);
       } catch (err) {
@@ -178,8 +179,8 @@ export default function ClientesPage() {
     setDrawerOpen(true);
     setLoadingFicha(true);
     try {
-      const historial = await dbService.getClienteHistorial(cliente.id);
-      const prefs = await dbService.getClientePreferencias(cliente.id);
+      const historial = await getClienteHistorial(cliente.id);
+      const prefs = await getClientePreferencias(cliente.id);
       setHistorialVentas(historial.ventas);
       setHistorialProformas(historial.proformas);
       setUltimoVendedor(historial.ultimoVendedor || '—');
@@ -219,7 +220,7 @@ export default function ClientesPage() {
     setEditError('');
     setEditLoading(true);
     try {
-      const updated = await dbService.updateCliente(clienteEditando.id, {
+      const updated = await updateCliente(clienteEditando.id, {
         razon_social_o_nombre: editNombre.trim(),
         telefono: editTelefono.trim() || undefined,
         email: editEmail.trim() || undefined,
@@ -249,7 +250,7 @@ export default function ClientesPage() {
         const nombre = nuevoNombre.trim();
         if (numeroDoc.length !== 8) { setErrorModal('El DNI debe tener 8 dígitos.'); return; }
         if (!nombre) { setErrorModal('El nombre completo es obligatorio.'); return; }
-        const created = await dbService.createCliente({
+        const created = await createCliente({
           tipo_documento: 'DNI',
           numero_documento: numeroDoc,
           razon_social_o_nombre: nombre,
@@ -264,7 +265,7 @@ export default function ClientesPage() {
         const razon = nuevoRazon.trim();
         if (ruc.length !== 11) { setErrorModal('El RUC debe tener 11 dígitos.'); return; }
         if (!razon) { setErrorModal('La razón social es obligatoria.'); return; }
-        const created = await dbService.createCliente({
+        const created = await createCliente({
           tipo_documento: 'RUC',
           numero_documento: ruc,
           razon_social_o_nombre: razon,
@@ -280,9 +281,9 @@ export default function ClientesPage() {
         if (!empresaSeleccionadaId) { setErrorModal('Selecciona la empresa a la que pertenece el contacto.'); return; }
         if (dni.length !== 8) { setErrorModal('El DNI debe tener 8 dígitos.'); return; }
         if (!nombre) { setErrorModal('El nombre del contacto es obligatorio.'); return; }
-        const empresa = await dbService.getEmpresaByClienteId(empresaSeleccionadaId);
+        const empresa = await getEmpresaByClienteId(empresaSeleccionadaId);
         if (!empresa) { setErrorModal('No se encontró la empresa asociada.'); return; }
-        const contacto = await dbService.createContacto({
+        const contacto = await createContacto({
           empresa_id: empresa.id,
           nombre,
           cargo: contactoCargo.trim() || undefined,

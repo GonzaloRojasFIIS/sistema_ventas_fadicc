@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { dbService, Producto as ProductoDb, MovimientoStock } from '@/lib/db';
+import { Producto as ProductoDb, MovimientoStock } from '@/types';
+import { getProducts, getMovimientosStock, addMovimientoStock } from '@/services/productoService';
+import { isSupabaseConfigured } from '@/repositories/supabaseClient';
 import GradientCard from '@/components/ui/GradientCard';
 import GradientButton from '@/components/ui/GradientButton';
 import GlassInput from '@/components/ui/GlassInput';
@@ -64,8 +66,8 @@ export default function InventarioPage() {
       setIsLoading(true);
       try {
         const [prods, movs] = await Promise.all([
-          dbService.getProducts(),
-          dbService.getMovimientosStock(),
+          getProducts(),
+          getMovimientosStock(),
         ]);
         setProductos(prods);
         setMovimientos(movs);
@@ -81,7 +83,7 @@ export default function InventarioPage() {
   // Diagnóstico de conexión
   useEffect(() => {
     const check = () => {
-      setDbStatus(dbService.isRealDb() ? 'conectado' : 'desconectado');
+      setDbStatus(isSupabaseConfigured ? 'conectado' : 'desconectado');
       const stored = typeof window !== 'undefined' ? localStorage.getItem('fadicc_movimientos_stock') : null;
       setLocalMovsCount(stored ? JSON.parse(stored).length : 0);
     };
@@ -95,8 +97,8 @@ export default function InventarioPage() {
       setKardexLoading(true);
       try {
         const movs = productoKardexId
-          ? await dbService.getMovimientosStock(productoKardexId)
-          : await dbService.getMovimientosStock();
+          ? await getMovimientosStock(productoKardexId)
+          : await getMovimientosStock();
         const ordenados = [...movs].sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
         const saldosPorProducto: Record<string, number> = {};
         const calculados = ordenados.map((m) => {
@@ -186,7 +188,7 @@ export default function InventarioPage() {
     }
 
     try {
-      await dbService.addMovimientoStock({
+      await addMovimientoStock({
         producto_id: productoMovimiento.id,
         tipo: tipoMovimiento,
         motivo: motivoMovimiento,
@@ -199,8 +201,8 @@ export default function InventarioPage() {
 
       // Recargar datos
       const [prods, movs] = await Promise.all([
-        dbService.getProducts(),
-        dbService.getMovimientosStock(),
+        getProducts(),
+        getMovimientosStock(),
       ]);
       setProductos(prods);
       setMovimientos(movs);
