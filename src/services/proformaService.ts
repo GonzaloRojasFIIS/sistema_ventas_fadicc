@@ -74,41 +74,75 @@ export async function createProforma(proforma: Omit<Proforma, 'id' | 'codigo_pro
   };
 
   if (supabase) {
-    const clients = await getClients();
-    const client = clients.find(c => c.id === proforma.cliente_id);
-    const users = await getUsuarios();
-    const rep = users.find(u => u.id === proforma.representante_id);
+    try {
+      // Solo buscar cliente/representante si no se pasó el nombre
+      let clienteNombre = proforma.cliente_nombre;
+      let clienteEmail = proforma.cliente_email;
+      let representanteNombre = proforma.representante_nombre;
 
-    const { data: profDb, error: errProf } = await supabase
-      .from('proformas')
-      .insert([{
+      if (!clienteNombre || !representanteNombre) {
+        try {
+          const [clients, users] = await Promise.all([getClients(), getUsuarios()]);
+          const client = clients.find(c => c.id === proforma.cliente_id);
+          const rep = users.find(u => u.id === proforma.representante_id);
+          clienteNombre = clienteNombre || client?.razon_social_o_nombre || undefined;
+          clienteEmail = clienteEmail || client?.email || undefined;
+          representanteNombre = representanteNombre || rep?.nombre || undefined;
+        } catch {
+          // Silencioso: usar valores ya disponibles
+        }
+      }
+
+      const insertPayload: any = {
         cliente_id: proforma.cliente_id,
-        contacto_id: proforma.contacto_id || null,
-        contacto_nombre: proforma.contacto_nombre || null,
-        contacto_email: proforma.contacto_email || null,
         representante_id: proforma.representante_id,
         codigo_proforma: code,
         estado: 'PENDIENTE',
         fecha_vencimiento: proforma.fecha_vencimiento,
         total: proforma.total,
-        cliente_nombre: client?.razon_social_o_nombre || null,
-        cliente_email: client?.email || null,
-        representante_nombre: rep?.nombre || null,
-      }])
-      .select()
-      .single();
+      };
+      if (proforma.contacto_id) insertPayload.contacto_id = proforma.contacto_id;
+      if (proforma.contacto_nombre) insertPayload.contacto_nombre = proforma.contacto_nombre;
+      if (proforma.contacto_email) insertPayload.contacto_email = proforma.contacto_email;
+      if (clienteNombre) insertPayload.cliente_nombre = clienteNombre;
+      if (clienteEmail) insertPayload.cliente_email = clienteEmail;
+      if (representanteNombre) insertPayload.representante_nombre = representanteNombre;
 
-    if (errProf || !profDb) throw new Error('Error al guardar la proforma');
+      const { data: profDb, error: errProf } = await supabase
+        .from('proformas')
+        .insert([insertPayload])
+        .select()
+        .single();
 
-    const detDb = proforma.detalles.map(d => ({
-      proforma_id: profDb.id,
-      producto_id: d.producto_id,
-      cantidad: d.cantidad,
-      precio_pactado: d.precio_pactado,
-      subtotal: d.subtotal,
-    }));
-    await supabase.from('proforma_detalles').insert(detDb);
-    return { ...newProf, id: profDb.id };
+      if (errProf) {
+        console.error('[db] Error insertando proforma:', errProf.message, errProf.details, errProf.hint);
+        throw new Error(`Error al guardar la proforma: ${errProf.message}`);
+      }
+      if (!profDb) {
+        throw new Error('Error al guardar la proforma: no se recibió respuesta de la base de datos');
+      }
+
+      const detDb = proforma.detalles.map(d => ({
+        proforma_id: profDb.id,
+        producto_id: d.producto_id,
+        nombre: d.nombre || null,
+        sku: d.sku || null,
+        cantidad: d.cantidad,
+        precio_pactado: d.precio_pactado,
+        subtotal: d.subtotal,
+      }));
+
+      const { error: errDet } = await supabase.from('proforma_detalles').insert(detDb);
+      if (errDet) {
+        console.error('[db] Error insertando proforma_detalles:', errDet.message, errDet.details);
+        // No lanzamos error aquí para no perder la proforma creada
+      }
+
+      return { ...newProf, id: profDb.id };
+    } catch (err: any) {
+      console.error('[db] createProforma error:', err?.message || err);
+      throw err;
+    }
   }
 
   const currentProfs = getLocalData<Proforma[]>('fadicc_proformas', []);

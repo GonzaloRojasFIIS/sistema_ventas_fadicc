@@ -612,16 +612,20 @@ function WizardModal({
   open,
   onClose,
   onCreated,
+  onError,
   products,
   clients,
   representanteId,
+  representanteNombre,
 }: {
   open: boolean;
   onClose: () => void;
   onCreated: () => void;
+  onError: (msg: string) => void;
   products: Producto[];
   clients: Cliente[];
   representanteId: string;
+  representanteNombre: string;
 }) {
   const [step, setStep] = useState(1);
   const [clientSearch, setClientSearch] = useState('');
@@ -793,10 +797,13 @@ function WizardModal({
     try {
       await createProforma({
         cliente_id: selectedClient.id,
+        cliente_nombre: selectedClient.razon_social_o_nombre,
+        cliente_email: selectedClient.email || undefined,
         contacto_id: selectedContacto?.id || undefined,
         contacto_nombre: selectedContacto?.nombre || undefined,
         contacto_email: selectedContacto?.email || undefined,
         representante_id: representanteId,
+        representante_nombre: representanteNombre,
         fecha_vencimiento: new Date(dueDate).toISOString(),
         total,
         detalles: lines.map(l => ({
@@ -810,7 +817,11 @@ function WizardModal({
       });
       onCreated();
       handleClose();
-    } catch {
+    } catch (err: any) {
+      const msg = err?.message || 'Error al crear la proforma';
+      console.error('[Wizard] Error creando proforma:', msg);
+      onError(msg);
+    } finally {
       setLoading(false);
     }
   };
@@ -1475,9 +1486,11 @@ export default function IndustrialPage() {
           loadData();
           addAlert('success', 'Proforma creada exitosamente');
         }}
+        onError={(msg) => addAlert('error', msg)}
         products={products}
         clients={clients}
         representanteId={usuario?.id || 'u2'}
+        representanteNombre={usuario?.nombre || 'Representante'}
       />
     </div>
   );
