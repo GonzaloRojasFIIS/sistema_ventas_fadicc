@@ -24,22 +24,6 @@ interface Cliente {
   direccion: string;
 }
 
-interface Venta {
-  id: string;
-  clienteId: string;
-  fecha: string;
-  total: number;
-  estado: string;
-}
-
-interface Proforma {
-  id: string;
-  clienteId: string;
-  fecha: string;
-  total: number;
-  estado: string;
-}
-
 /* ── Datos de muestra ── */
 const CLIENTES_INICIALES: Cliente[] = [
   { id: 'c1', tipoDoc: 'DNI', numeroDoc: '45678231', nombre: 'Juan Pérez García', telefono: '987654321', email: 'juan.perez@mail.com', direccion: 'Av. Principal 123, Lima' },
@@ -50,25 +34,6 @@ const CLIENTES_INICIALES: Cliente[] = [
   { id: 'c6', tipoDoc: 'RUC', numeroDoc: '20987654321', nombre: 'Soluciones Constructivas S.A.', razonSocial: 'Soluciones Constructivas S.A.', telefono: '978901234', email: 'admin@soluciones.com', direccion: 'Av. Prolongación 654, Chiclayo' },
   { id: 'c7', tipoDoc: 'DNI', numeroDoc: '36985214', nombre: 'Ana Martínez Vega', telefono: '901234567', email: 'ana.martinez@mail.com', direccion: 'Jr. Libertad 147, Piura' },
   { id: 'c8', tipoDoc: 'DNI', numeroDoc: '74125896', nombre: 'Pedro Sánchez Flores', telefono: '923456789', email: 'pedro.sanchez@mail.com', direccion: 'Calle Los Pinos 258, Iquitos' },
-];
-
-const VENTAS: Venta[] = [
-  { id: 'v1', clienteId: 'c1', fecha: '2026-05-15', total: 1250.0, estado: 'Completada' },
-  { id: 'v2', clienteId: 'c1', fecha: '2026-04-20', total: 3400.0, estado: 'Completada' },
-  { id: 'v3', clienteId: 'c2', fecha: '2026-05-28', total: 8900.0, estado: 'Pendiente' },
-  { id: 'v4', clienteId: 'c3', fecha: '2026-06-01', total: 450.0, estado: 'Completada' },
-  { id: 'v5', clienteId: 'c4', fecha: '2026-05-10', total: 5600.0, estado: 'Completada' },
-  { id: 'v6', clienteId: 'c4', fecha: '2026-03-22', total: 1200.0, estado: 'Completada' },
-  { id: 'v7', clienteId: 'c5', fecha: '2026-05-30', total: 2300.0, estado: 'Pendiente' },
-  { id: 'v8', clienteId: 'c6', fecha: '2026-04-18', total: 7800.0, estado: 'Completada' },
-];
-
-const PROFORMAS: Proforma[] = [
-  { id: 'p1', clienteId: 'c1', fecha: '2026-05-10', total: 1500.0, estado: 'Aceptada' },
-  { id: 'p2', clienteId: 'c2', fecha: '2026-05-25', total: 9500.0, estado: 'Pendiente' },
-  { id: 'p3', clienteId: 'c4', fecha: '2026-04-05', total: 6000.0, estado: 'Rechazada' },
-  { id: 'p4', clienteId: 'c6', fecha: '2026-05-18', total: 8200.0, estado: 'Aceptada' },
-  { id: 'p5', clienteId: 'c1', fecha: '2026-03-15', total: 2200.0, estado: 'Expirada' },
 ];
 
 const PAGE_SIZE = 5;
@@ -313,20 +278,6 @@ export default function ClientesPage() {
       setErrorModal(err?.message || 'Error al registrar el cliente. Verifica los datos.');
     }
   }
-
-  const ventasCliente = useMemo(() => {
-    if (!clienteDrawer) return [];
-    return VENTAS.filter((v) => v.clienteId === clienteDrawer.id).sort(
-      (a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
-    );
-  }, [clienteDrawer]);
-
-  const proformasCliente = useMemo(() => {
-    if (!clienteDrawer) return [];
-    return PROFORMAS.filter((p) => p.clienteId === clienteDrawer.id).sort(
-      (a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
-    );
-  }, [clienteDrawer]);
 
   return (
     <div className="min-h-full p-6 space-y-6">
@@ -616,7 +567,7 @@ export default function ClientesPage() {
                             <td className="px-3 py-2 text-slate-600">{new Date(v.fecha_venta).toLocaleDateString('es-PE')}</td>
                             <td className="px-3 py-2 text-right font-semibold text-slate-800">S/ {v.total.toFixed(2)}</td>
                             <td className="px-3 py-2 text-slate-600">{v.numero_comprobante || '—'}</td>
-                            <td className="px-3 py-2 text-slate-600">{v.vendedor_id || '—'}</td>
+                            <td className="px-3 py-2 text-slate-600">{v.vendedor_nombre || '—'}</td>
                           </tr>
                         ))}
                         {historialVentas.length === 0 && (

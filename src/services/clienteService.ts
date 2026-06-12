@@ -125,6 +125,33 @@ export async function updateCliente(id: string, cambios: Partial<Omit<Cliente, '
 }
 
 export async function getClienteVentas(clienteId: string): Promise<VentaComercial[]> {
+  if (supabase) {
+    const { data, error } = await supabase
+      .from('ventas_comerciales')
+      .select(`
+        *,
+        clientes(razon_social_o_nombre),
+        usuarios(nombre),
+        venta_detalles(productos(nombre, sku), cantidad, precio_unitario, subtotal)
+      `)
+      .eq('cliente_id', clienteId)
+      .order('fecha_venta', { ascending: false });
+
+    if (!error && data) {
+      return data.map((v: any) => ({
+        ...v,
+        cliente_nombre: v.clientes?.razon_social_o_nombre,
+        vendedor_nombre: v.usuarios?.nombre,
+        detalles: (v.venta_detalles || []).map((d: any) => ({
+          nombre: d.productos?.nombre,
+          sku: d.productos?.sku,
+          cantidad: d.cantidad,
+          precio_unitario: d.precio_unitario,
+          subtotal: d.subtotal,
+        })),
+      }));
+    }
+  }
   const allVentas = getLocalData<VentaComercial[]>('fadicc_ventas', []);
   return allVentas.filter(v => v.cliente_id === clienteId);
 }
@@ -134,7 +161,7 @@ export async function getClienteHistorial(clienteId: string): Promise<{ ventas: 
   const { getProformas } = await import('./proformaService');
   const proformas = (await getProformas()).filter(p => p.cliente_id === clienteId);
   const ultimaVenta = ventas.sort((a, b) => new Date(b.fecha_venta).getTime() - new Date(a.fecha_venta).getTime())[0];
-  return { ventas, proformas, ultimoVendedor: ultimaVenta?.vendedor_id };
+  return { ventas, proformas, ultimoVendedor: ultimaVenta?.vendedor_nombre || ultimaVenta?.vendedor_id };
 }
 
 export async function getClientePreferencias(clienteId: string): Promise<{
