@@ -271,10 +271,13 @@ export default function CanalComercialPage() {
   useEffect(() => {
     async function checkCaja() {
       if (!usuario) return;
-      if (cajaId) {
+      if (usuario.rol !== 'VENDEDOR' && usuario.rol !== 'ADMIN') return;
+      try {
+        // Siempre consultar base de datos para estado real de caja
         const caja = await getActiveCaja(usuario.id);
         if (caja) {
           setCajaActiva(caja);
+          setCajaId(caja.id);
           const ventas = await getVentasRecientes(caja.id);
           setVentasDelTurno(ventas);
         } else {
@@ -282,13 +285,12 @@ export default function CanalComercialPage() {
           setCajaActiva(null);
           setVentasDelTurno([]);
         }
-      } else {
-        setCajaActiva(null);
-        setVentasDelTurno([]);
+      } catch (err) {
+        console.error('Error al cargar caja:', err);
       }
     }
     checkCaja();
-  }, [cajaId, usuario, setCajaId]);
+  }, [usuario, setCajaId]);
 
   // =========================================================================
   // Click outside for client dropdown

@@ -26,20 +26,20 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     const initSession = async () => {
       try {
         const storedUser = localStorage.getItem('fadicc_session_user');
-        const storedCaja = localStorage.getItem('fadicc_session_caja');
 
         if (storedUser) {
           const parsedUser: Usuario = JSON.parse(storedUser);
           setUsuario(parsedUser);
 
-          // Si es vendedor, intentar cargar caja activa
-          if (storedCaja) {
-            setCajaIdState(storedCaja);
-          } else if (parsedUser.rol === 'VENDEDOR' || parsedUser.rol === 'ADMIN') {
+          // Siempre consultar base de datos para estado real de caja
+          if (parsedUser.rol === 'VENDEDOR' || parsedUser.rol === 'ADMIN') {
             const caja = await getActiveCaja(parsedUser.id);
             if (caja) {
               setCajaIdState(caja.id);
               localStorage.setItem('fadicc_session_caja', caja.id);
+            } else {
+              setCajaIdState(null);
+              localStorage.removeItem('fadicc_session_caja');
             }
           }
         }
@@ -63,12 +63,15 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       setUsuario(user);
       localStorage.setItem('fadicc_session_user', JSON.stringify(user));
 
-      // Cargar caja activa si aplica
+      // Cargar caja activa siempre desde base de datos
       if (user.rol === 'VENDEDOR' || user.rol === 'ADMIN') {
         const caja = await getActiveCaja(user.id);
         if (caja) {
           setCajaIdState(caja.id);
           localStorage.setItem('fadicc_session_caja', caja.id);
+        } else {
+          setCajaIdState(null);
+          localStorage.removeItem('fadicc_session_caja');
         }
       }
 
