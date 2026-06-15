@@ -102,6 +102,9 @@ export interface VentaComercial {
   fecha_venta: string;
   detalles?: VentaDetalle[];
   forma_pago?: 'CONTADO' | 'CREDITO';
+  metodo_pago?: 'EFECTIVO' | 'TARJETA_CREDITO' | 'TARJETA_DEBITO' | 'TRANSFERENCIA' | 'YAPE_PLIN';
+  monto_recibido?: number;
+  vuelto?: number;
   moneda?: 'SOLES' | 'DOLARES';
   guia_remision?: string;
   orden_compra?: string;
