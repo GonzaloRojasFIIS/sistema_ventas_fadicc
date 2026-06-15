@@ -97,6 +97,9 @@ export async function registrarVentaDirecta(venta: {
   detalles: { producto_id: string; cantidad: number; precio_unitario: number }[];
   forma_pago?: 'CONTADO' | 'CREDITO';
   moneda?: 'SOLES' | 'DOLARES';
+  metodo_pago?: 'EFECTIVO' | 'TARJETA_CREDITO' | 'TARJETA_DEBITO' | 'TRANSFERENCIA' | 'YAPE_PLIN';
+  monto_recibido?: number;
+  vuelto?: number;
   guia_remision?: string;
   orden_compra?: string;
   descuentos?: number;
@@ -210,6 +213,9 @@ export async function registrarVentaDirecta(venta: {
       fecha_venta: new Date().toISOString(),
       forma_pago: enriched.forma_pago,
       moneda: enriched.moneda,
+      metodo_pago: venta.metodo_pago || 'EFECTIVO',
+      monto_recibido: venta.monto_recibido || 0,
+      vuelto: venta.vuelto || 0,
       subtotal: enriched.subtotal,
       igv: enriched.igv,
       monto_letras: enriched.monto_letras,
