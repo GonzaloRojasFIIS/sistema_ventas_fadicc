@@ -117,10 +117,24 @@ export default function CanalComercialPage() {
   const [quickRuc, setQuickRuc] = useState('');
   const [quickDireccion, setQuickDireccion] = useState('');
 
+  // metodos pago 
+  const [showPagoModal, setShowPagoModal] = useState(false);
+  const [metodoPago, setMetodoPago] = useState<'EFECTIVO' | 'TARJETA_CREDITO' | 'TARJETA_DEBITO' | 'TRANSFERENCIA' | 'YAPE_PLIN'>('EFECTIVO');
+  const [montoRecibido, setMontoRecibido] = useState<number>(0);
+  const [vueltoCalculado, setVueltoCalculado] = useState<number>(0);
+
   // Refs for keyboard shortcuts
   const productSearchRef = useRef<HTMLInputElement>(null);
   const clientSearchRef = useRef<HTMLInputElement>(null);
 
+useEffect(() => {
+  if (metodoPago === 'EFECTIVO' && montoRecibido > cartTotal) {
+    setVueltoCalculado(montoRecibido - cartTotal);
+  } else {
+    setVueltoCalculado(0);
+  }
+}, [montoRecibido, cartTotal, metodoPago]);
+  
   // --- Keyboard shortcuts ---
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -502,6 +516,9 @@ export default function CanalComercialPage() {
         detalles: detallesVenta,
         forma_pago: formaPago,
         moneda: moneda,
+        metodo_pago: metodoPago,
+        monto_recibido: metodoPago === 'EFECTIVO' ? montoRecibido : cartTotal,
+        vuelto: metodoPago === 'EFECTIVO' ? vueltoCalculado : 0,
       };
 
       if (tipoComprobante === 'FACTURA') {
@@ -523,6 +540,7 @@ export default function CanalComercialPage() {
       addAlerta('success', `Venta registrada: ${ticketNum}`);
       setCart([]);
       setSelectedCliente(null);
+      setShowPagoModal(false);
       setFormaPago('CONTADO');
       setGuiaRemision('');
       setOrdenCompra('');
@@ -564,7 +582,10 @@ export default function CanalComercialPage() {
       }
     }
 
-    await executeVenta(selectedCliente);
+    // Al final de handleConfirmarVenta, en vez de await executeVenta(selectedCliente):
+    setMontoRecibido(cartTotal);
+    setMetodoPago('EFECTIVO');
+    setShowPagoModal(true);
   };
 
   const handleQuickClienteSave = async () => {
@@ -1818,6 +1839,138 @@ export default function CanalComercialPage() {
           </div>
         )}
       </GradientModal>
+
+      {showPagoModal && (
+  <div
+    style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50
+    }}
+  >
+    <div
+      style={{
+        background: 'white', borderRadius: 16, width: '100%', maxWidth: 420,
+        margin: '0 1rem', boxShadow: '0 8px 32px rgba(0,0,0,0.18)', overflow: 'hidden'
+      }}
+    >
+      {/* Header */}
+      <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontWeight: 600, fontSize: 16 }}>Procesar pago</span>
+        <button
+          onClick={() => setShowPagoModal(false)}
+          style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: 30, height: 30, cursor: 'pointer', fontSize: 16 }}
+        >✕</button>
+      </div>
+
+      {/* Body */}
+      <div style={{ padding: '1rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+
+        {/* Total */}
+        <div style={{ background: '#f8fafc', borderRadius: 12, padding: '0.875rem', textAlign: 'center' }}>
+          <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>Total a cobrar</div>
+          <div style={{ fontSize: 28, fontWeight: 700, fontFamily: 'monospace' }}>
+            S/ {cartTotal.toFixed(2)}
+          </div>
+        </div>
+
+        {/* Métodos */}
+        <div>
+          <div style={{ fontSize: 12, color: '#64748b', marginBottom: 8 }}>Método de pago</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            {[
+              { id: 'EFECTIVO',        label: '💵 Efectivo' },
+              { id: 'TARJETA_DEBITO',  label: '💳 Débito' },
+              { id: 'TARJETA_CREDITO', label: '💳 Crédito' },
+              { id: 'YAPE_PLIN',       label: '📱 Yape / Plin' },
+            ].map((op) => (
+              <button
+                key={op.id}
+                type="button"
+                onClick={() => setMetodoPago(op.id as any)}
+                style={{
+                  padding: '10px 12px', borderRadius: 8, cursor: 'pointer', fontSize: 13,
+                  fontWeight: metodoPago === op.id ? 600 : 400,
+                  border: metodoPago === op.id ? '2px solid #1d4ed8' : '1px solid #e2e8f0',
+                  background: metodoPago === op.id ? '#eff6ff' : 'white',
+                  color: metodoPago === op.id ? '#1e3a8a' : '#475569',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                }}
+              >
+                {op.label}
+                {metodoPago === op.id && <span style={{ color: '#1d4ed8' }}>✓</span>}
+              </button>
+            ))}
+            {/* Transferencia ocupa fila completa */}
+            <button
+              type="button"
+              onClick={() => setMetodoPago('TRANSFERENCIA')}
+              style={{
+                gridColumn: 'span 2', padding: '10px 12px', borderRadius: 8, cursor: 'pointer', fontSize: 13,
+                fontWeight: metodoPago === 'TRANSFERENCIA' ? 600 : 400,
+                border: metodoPago === 'TRANSFERENCIA' ? '2px solid #1d4ed8' : '1px solid #e2e8f0',
+                background: metodoPago === 'TRANSFERENCIA' ? '#eff6ff' : 'white',
+                color: metodoPago === 'TRANSFERENCIA' ? '#1e3a8a' : '#475569',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              }}
+            >
+              🏦 Transferencia bancaria
+              {metodoPago === 'TRANSFERENCIA' && <span style={{ color: '#1d4ed8' }}>✓</span>}
+            </button>
+          </div>
+        </div>
+
+        {/* Efectivo: monto recibido y vuelto */}
+        {metodoPago === 'EFECTIVO' && (
+          <div style={{ background: '#f8fafc', borderRadius: 12, border: '1px solid #e2e8f0', padding: '0.875rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 6 }}>Monto recibido</div>
+              <input
+                type="number"
+                step="0.10"
+                min={cartTotal}
+                value={montoRecibido || ''}
+                onChange={(e) => setMontoRecibido(Number(e.target.value))}
+                style={{
+                  width: '100%', border: '1px solid #e2e8f0', borderRadius: 8,
+                  padding: '8px 10px', fontSize: 15, fontFamily: 'monospace',
+                  fontWeight: 600, outline: 'none',
+                }}
+              />
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 6 }}>Vuelto</div>
+              <div style={{
+                padding: '8px 10px', fontSize: 15, fontFamily: 'monospace', fontWeight: 600,
+                borderRadius: 8, border: '1px solid',
+                borderColor: montoRecibido < cartTotal ? '#fca5a5' : '#6ee7b7',
+                background: montoRecibido < cartTotal ? '#fef2f2' : '#ecfdf5',
+                color: montoRecibido < cartTotal ? '#dc2626' : '#059669',
+              }}>
+                S/ {vueltoCalculado.toFixed(2)}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Botón confirmar */}
+        <button
+          type="button"
+          disabled={metodoPago === 'EFECTIVO' && montoRecibido < cartTotal}
+          onClick={() => executeVenta(selectedCliente!)}
+          style={{
+            width: '100%', padding: '12px', borderRadius: 10, border: 'none',
+            background: metodoPago === 'EFECTIVO' && montoRecibido < cartTotal ? '#94a3b8' : '#1d4ed8',
+            color: 'white', fontSize: 14, fontWeight: 700, cursor: metodoPago === 'EFECTIVO' && montoRecibido < cartTotal ? 'not-allowed' : 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          }}
+        >
+          🧾 Confirmar y emitir comprobante
+        </button>
+
+      </div>
+    </div>
+  </div>
+)}
 
       {/* Teclado rápido — panel flotante */}
       {showShortcuts && (
