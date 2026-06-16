@@ -1312,86 +1312,155 @@ const addProduct = (p: Producto) => {
             <GlassInput value={nuevoClienteDir} onChange={(e) => setNuevoClienteDir(e.target.value)} placeholder="Av. Principal 123" />
           </div>
           {nuevoClienteError && <p className="text-sm text-red-600 font-medium">{nuevoClienteError}</p>}
-        </form>
+</form>
       </GradientModal>
-    </GradientModal>
+
+      {/* ====== CONFIGURADOR COCINA A MEDIDA ====== */}
+      <GradientModal
+        isOpen={customConfigOpen}
+        onClose={() => setCustomConfigOpen(false)}
+        title="🛠️ Configurador de Cocina a Medida"
+        size="lg"
+      >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-2">
+          {/* Controles de Diseño */}
+          <div className="md:col-span-2 space-y-4">
+            {/* Material */}
+            <div>
+              <label className="text-xs font-bold text-slate-700 block mb-1">Materia Prima / Material</label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { id: '304', name: 'Premium (Acero 304)' },
+                  { id: '430', name: 'Estándar (Acero 430)' },
+                  { id: 'FIERRO', name: 'Económico (Fierro)' }
+                ].map(op => (
+                  <button key={op.id} type="button" onClick={() => setMaterial(op.id as any)}
+                    className={`py-2 px-3 text-xs font-bold rounded-lg border transition-all ${
+                      material === op.id ? 'border-orange-500 bg-orange-50 text-orange-950' : 'border-slate-200 hover:bg-slate-50 text-slate-600'
+                    }`}>
+                    {op.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {/* Hornillas */}
+            <div>
+              <label className="text-xs font-bold text-slate-700 block mb-1">Número de Hornillas</label>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 6].map(num => (
+                  <button key={num} type="button" onClick={() => setHornillas(num)}
+                    className={`w-10 h-10 rounded-full border text-sm font-bold flex items-center justify-center transition-all ${
+                      hornillas === num ? 'border-orange-500 bg-orange-50 text-orange-950 ring-2 ring-orange-500/10' : 'border-slate-200 hover:bg-slate-50 text-slate-600'
+                    }`}>
+                    {num}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {/* Presión */}
+            <div>
+              <label className="text-xs font-bold text-slate-700 block mb-1">Tipo de Quemadores</label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { id: 'ALTA', name: '🔥 Alta Presión (Comercial)' },
+                  { id: 'BAJA', name: '💨 Baja Presión (Semi-Industrial)' }
+                ].map(op => (
+                  <button key={op.id} type="button" onClick={() => setPresion(op.id as any)}
+                    className={`py-2 px-3 text-xs font-bold rounded-lg border transition-all ${
+                      presion === op.id ? 'border-orange-500 bg-orange-50 text-orange-950' : 'border-slate-200 hover:bg-slate-50 text-slate-600'
+                    }`}>
+                    {op.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {/* Base */}
+            <div>
+              <label className="text-xs font-bold text-slate-700 block mb-1">Estructura Base</label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { id: 'MESA', name: 'Patas de Mesa' },
+                  { id: 'HORNO', name: 'Horno Integrado' },
+                  { id: 'PAGOPLANCHA', name: 'Plancha y Parrilla' }
+                ].map(op => (
+                  <button key={op.id} type="button" onClick={() => setTipoBase(op.id as any)}
+                    className={`py-2 px-3 text-xs font-bold rounded-lg border transition-all ${
+                      tipoBase === op.id ? 'border-orange-500 bg-orange-50 text-orange-950' : 'border-slate-200 hover:bg-slate-50 text-slate-600'
+                    }`}>
+                    {op.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {/* Ancho especial */}
+            <div className="flex items-center gap-2 bg-slate-50 p-3 rounded-lg border border-slate-100">
+              <input type="checkbox" id="ancho_esp" checked={anchoEspecial}
+                onChange={e => setAnchoEspecial(e.target.checked)}
+                className="rounded text-orange-500 focus:ring-orange-500 border-slate-300 w-4 h-4 cursor-pointer"
+              />
+              <label htmlFor="ancho_esp" className="text-xs font-bold text-slate-700 cursor-pointer select-none">
+                📐 Ancho Especial (Más de 1.20 metros / requiere 25% más metal)
+              </label>
+            </div>
+          </div>
+
+          {/* Panel lateral de costeo */}
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+            <h4 className="text-xs font-extrabold uppercase tracking-wide text-slate-500">Desglose de Costo</h4>
+            <div className="space-y-1">
+              {desgloseCustom.map((item, i) => (
+                <div key={i} className="flex justify-between text-xs text-slate-600">
+                  <span className="truncate pr-2">{item.label}</span>
+                  <span className="font-mono font-semibold shrink-0">S/ {item.costo}</span>
+                </div>
+              ))}
+              <div className="border-t border-slate-200 pt-1 flex justify-between text-xs font-bold text-slate-800">
+                <span>Total Costo</span>
+                <span className="font-mono">S/ {costoTotalCustom.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-xs text-slate-500">
+                <span>Precio Sugerido:</span>
+                <span className="font-mono font-semibold">S/ {precioSugeridoCustom.toFixed(2)}</span>
+              </div>
+            </div>
+            <div className="border-t border-dashed border-slate-200 pt-3">
+              <label className="text-xs font-extrabold text-slate-700 block mb-1">Precio Pactado (S/)</label>
+              <input type="number" min={0}
+                value={precioPactadoCustom || ''}
+                onChange={e => setPrecioPactadoCustom(Number(e.target.value))}
+                className="w-full bg-white border border-slate-200 rounded-lg p-2 text-sm font-mono font-bold text-slate-900 focus:ring-2 focus:ring-orange-500/20"
+              />
+            </div>
+            <div className="space-y-1">
+              <div className="flex justify-between text-[10px] font-bold text-slate-500">
+                <span>Margen:</span>
+                <span className={margenCustom >= 35 ? 'text-green-600' : margenCustom >= 25 ? 'text-amber-500' : 'text-red-500'}>
+                  {margenCustom}%
+                </span>
+              </div>
+              <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                <div
+                  className={`h-full transition-all duration-300 ${margenCustom >= 35 ? 'bg-green-500' : margenCustom >= 25 ? 'bg-amber-400' : 'bg-red-500'}`}
+                  style={{ width: `${Math.max(0, Math.min(100, margenCustom))}%` }}
+                />
+              </div>
+              <p className="text-[10px] text-slate-400 text-center">
+                {margenCustom < 0 ? '🚫 Por debajo del costo' : margenCustom >= 35 ? '✅ Margen excelente' : margenCustom >= 25 ? '⚠️ Margen bajo' : '🚨 Precio muy bajo'}
+              </p>
+            </div>
+            <GradientButton variant="primary" size="md" className="w-full font-bold"
+              onClick={handleAgregarCocinaCustom}
+              disabled={precioPactadoCustom < costoTotalCustom}
+            >
+              Agregar a Proforma
+            </GradientButton>
+          </div>
+        </div>
+      </GradientModal>
+
+    </GradientModal>  {/* ← cierre del wizard principal */}
   );
 }
-<GradientModal
-  isOpen={customConfigOpen}
-  onClose={() => setCustomConfigOpen(false)}
-  title="🛠️ Configurador de Cocina a Medida"
-  size="lg"
->
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-2">
-    {/* Controles — igual al plan original */}
-    <div className="md:col-span-2 space-y-4">
-      {/* ... material, hornillas, presion, tipoBase, anchoEspecial ... */}
-    </div>
-
-    {/* Panel de costeo MEJORADO con desglose */}
-    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
-      <h4 className="text-xs font-extrabold uppercase tracking-wide text-slate-500">Desglose de Costo</h4>
-      
-      {/* NUEVA tabla de desglose */}
-      <div className="space-y-1">
-        {desgloseCustom.map((item, i) => (
-          <div key={i} className="flex justify-between text-xs text-slate-600">
-            <span className="truncate pr-2">{item.label}</span>
-            <span className="font-mono font-semibold shrink-0">S/ {item.costo}</span>
-          </div>
-        ))}
-        <div className="border-t border-slate-200 pt-1 flex justify-between text-xs font-bold text-slate-800">
-          <span>Total Costo</span>
-          <span className="font-mono">S/ {costoTotalCustom.toFixed(2)}</span>
-        </div>
-        <div className="flex justify-between text-xs text-slate-500">
-          <span>Precio Sugerido:</span>
-          <span className="font-mono font-semibold">S/ {precioSugeridoCustom.toFixed(2)}</span>
-        </div>
-      </div>
-
-      {/* Precio pactado + margen — igual al plan original */}
-      <div className="border-t border-dashed border-slate-200 pt-3">
-        <label className="text-xs font-extrabold text-slate-700 block mb-1">Precio Pactado (S/)</label>
-        <input
-          type="number" min={0}
-          value={precioPactadoCustom || ''}
-          onChange={e => setPrecioPactadoCustom(Number(e.target.value))}
-          className="w-full bg-white border border-slate-200 rounded-lg p-2 text-sm font-mono font-bold text-slate-900 focus:ring-2 focus:ring-orange-500/20"
-        />
-      </div>
-
-      {/* Barra de margen */}
-      <div className="space-y-1">
-        <div className="flex justify-between text-[10px] font-bold text-slate-500">
-          <span>Margen:</span>
-          <span className={margenCustom >= 35 ? 'text-green-600' : margenCustom >= 25 ? 'text-amber-500' : 'text-red-500'}>
-            {margenCustom}%
-          </span>
-        </div>
-        <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-          <div
-            className={`h-full transition-all duration-300 ${margenCustom >= 35 ? 'bg-green-500' : margenCustom >= 25 ? 'bg-amber-400' : 'bg-red-500'}`}
-            style={{ width: `${Math.max(0, Math.min(100, margenCustom))}%` }}
-          />
-        </div>
-        <p className="text-[10px] text-slate-400 text-center">
-          {margenCustom < 0 ? '🚫 Por debajo del costo' : margenCustom >= 35 ? '✅ Margen excelente' : margenCustom >= 25 ? '⚠️ Margen bajo' : '🚨 Precio muy bajo'}
-        </p>
-      </div>
-
-      <GradientButton
-        variant="primary" size="md"
-        className="w-full font-bold"
-        onClick={handleAgregarCocinaCustom}
-        disabled={precioPactadoCustom < costoTotalCustom}
-      >
-        Agregar a Proforma
-      </GradientButton>
-    </div>
-  </div>
-</GradientModal>
 
 
 // =========================================================================
