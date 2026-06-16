@@ -1665,7 +1665,7 @@ export default function IndustrialPage() {
       </div>
 
       {/* Kanban */}
-       gap-4 overflow-x-auto pb-4">
+      <div className="flex gap-4 overflow-x-auto pb-4">
         {columns.map(col => (
           <div key={col.estado} className="flex-shrink-0 w-[300px]">
             <div className="flex items-center justify-between mb-3 px-1">
