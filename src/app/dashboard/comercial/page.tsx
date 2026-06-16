@@ -127,13 +127,7 @@ export default function CanalComercialPage() {
   const productSearchRef = useRef<HTMLInputElement>(null);
   const clientSearchRef = useRef<HTMLInputElement>(null);
 
-useEffect(() => {
-  if (metodoPago === 'EFECTIVO' && montoRecibido > cartTotal) {
-    setVueltoCalculado(montoRecibido - cartTotal);
-  } else {
-    setVueltoCalculado(0);
-  }
-}, [montoRecibido, cartTotal, metodoPago]);
+
   
   // --- Keyboard shortcuts ---
   useEffect(() => {
@@ -660,9 +654,18 @@ useEffect(() => {
     (sum, item) => sum + item.producto.precio_base * item.cantidad,
     0
   );
-  const cartTotal = cartSubtotalRaw;
-  const cartSubtotal = cartTotal / 1.18;
-  const cartIgv = cartTotal - cartSubtotal;
+const cartTotal = cartSubtotalRaw;
+const cartSubtotal = cartTotal / 1.18;
+const cartIgv = cartTotal - cartSubtotal;
+
+// ← PEGA AQUÍ:
+useEffect(() => {
+  if (metodoPago === 'EFECTIVO' && montoRecibido > cartTotal) {
+    setVueltoCalculado(montoRecibido - cartTotal);
+  } else {
+    setVueltoCalculado(0);
+  }
+}, [montoRecibido, cartTotal, metodoPago]);
 
   const filteredProductos = useMemo(() => {
     const q = debouncedProductSearch.toLowerCase().trim();
