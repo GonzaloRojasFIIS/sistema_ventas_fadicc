@@ -1458,7 +1458,7 @@ const addProduct = (p: Producto) => {
         </div>
       </GradientModal>
 
-    </GradientModal>  {/* ← cierre del wizard principal */}
+    </GradientModal>
   );
 }
 
