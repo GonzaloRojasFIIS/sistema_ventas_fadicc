@@ -117,12 +117,13 @@ export default function CanalComercialPage() {
   const [quickRuc, setQuickRuc] = useState('');
   const [quickDireccion, setQuickDireccion] = useState('');
 
-  // metodos pago 
+// metodos pago
   const [showPagoModal, setShowPagoModal] = useState(false);
+  const [pasoModal, setPasoModal] = useState<1 | 2>(1);
   const [metodoPago, setMetodoPago] = useState<'EFECTIVO' | 'TARJETA_CREDITO' | 'TARJETA_DEBITO' | 'TRANSFERENCIA' | 'YAPE_PLIN'>('EFECTIVO');
+  const [tarjetaSeleccionada, setTarjetaSeleccionada] = useState<string>('VISA');
   const [montoRecibido, setMontoRecibido] = useState<number>(0);
   const [vueltoCalculado, setVueltoCalculado] = useState<number>(0);
-
   // Refs for keyboard shortcuts
   const productSearchRef = useRef<HTMLInputElement>(null);
   const clientSearchRef = useRef<HTMLInputElement>(null);
@@ -1849,132 +1850,287 @@ useEffect(() => {
       position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50
     }}
+    onClick={(e) => { if (e.target === e.currentTarget) { setShowPagoModal(false); setPasoModal(1); } }}
   >
-    <div
-      style={{
-        background: 'white', borderRadius: 16, width: '100%', maxWidth: 420,
-        margin: '0 1rem', boxShadow: '0 8px 32px rgba(0,0,0,0.18)', overflow: 'hidden'
-      }}
-    >
+    <div style={{
+      background: 'white', borderRadius: 16, width: '100%', maxWidth: 460,
+      margin: '0 1rem', overflow: 'hidden', display: 'flex', flexDirection: 'column'
+    }}>
+
       {/* Header */}
-      <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontWeight: 600, fontSize: 16 }}>Procesar pago</span>
+      <div style={{ padding: '12px 16px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontWeight: 600, fontSize: 15, color: '#0f172a' }}>
+          {pasoModal === 1 ? 'Método de pago' : 'Confirmar venta'}
+        </span>
         <button
-          onClick={() => setShowPagoModal(false)}
-          style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: 30, height: 30, cursor: 'pointer', fontSize: 16 }}
+          onClick={() => { setShowPagoModal(false); setPasoModal(1); }}
+          style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: 28, height: 28, cursor: 'pointer', fontSize: 14, color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >✕</button>
       </div>
 
-      {/* Body */}
-      <div style={{ padding: '1rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      {/* Steps */}
+      <div style={{ display: 'flex', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid #f1f5f9', gap: 4 }}>
+        {[{ n: 1, label: 'Método' }, { n: 2, label: 'Confirmar' }].map((s, i) => (
+          <React.Fragment key={s.n}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <div style={{
+                width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 11, fontWeight: 600, flexShrink: 0,
+                background: s.n < pasoModal ? '#0F6E56' : s.n === pasoModal ? '#185FA5' : '#f1f5f9',
+                color: s.n <= pasoModal ? 'white' : '#94a3b8',
+              }}>
+                {s.n < pasoModal ? '✓' : s.n}
+              </div>
+              <span style={{ fontSize: 11, fontWeight: s.n === pasoModal ? 600 : 400, color: s.n === pasoModal ? '#185FA5' : s.n < pasoModal ? '#0F6E56' : '#94a3b8' }}>
+                {s.label}
+              </span>
+            </div>
+            {i < 1 && <div style={{ flex: 1, height: 1, background: '#e2e8f0', margin: '0 6px' }} />}
+          </React.Fragment>
+        ))}
+      </div>
 
-        {/* Total */}
-        <div style={{ background: '#f8fafc', borderRadius: 12, padding: '0.875rem', textAlign: 'center' }}>
-          <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>Total a cobrar</div>
-          <div style={{ fontSize: 28, fontWeight: 700, fontFamily: 'monospace' }}>
-            S/ {cartTotal.toFixed(2)}
+      {/* Paso 1 — Método de pago */}
+      {pasoModal === 1 && (
+        <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+          {/* Total */}
+          <div style={{ background: '#f8fafc', borderRadius: 10, padding: '10px 14px', textAlign: 'center', border: '1px solid #e2e8f0' }}>
+            <div style={{ fontSize: 11, color: '#64748b', marginBottom: 2 }}>Total a cobrar</div>
+            <div style={{ fontSize: 26, fontWeight: 700, fontFamily: 'monospace', color: '#0f172a' }}>S/ {cartTotal.toFixed(2)}</div>
           </div>
-        </div>
 
-        {/* Métodos */}
-        <div>
-          <div style={{ fontSize: 12, color: '#64748b', marginBottom: 8 }}>Método de pago</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            {[
-              { id: 'EFECTIVO',        label: '💵 Efectivo' },
-              { id: 'TARJETA_DEBITO',  label: '💳 Débito' },
-              { id: 'TARJETA_CREDITO', label: '💳 Crédito' },
-              { id: 'YAPE_PLIN',       label: '📱 Yape / Plin' },
-            ].map((op) => (
+          {/* Métodos */}
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 600, color: '#94a3b8', letterSpacing: '.5px', textTransform: 'uppercase', marginBottom: 8 }}>Método de pago</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7 }}>
+              {[
+                { id: 'EFECTIVO', label: 'Efectivo', icon: '💵' },
+                { id: 'YAPE_PLIN', label: 'Yape / Plin', icon: '📱' },
+                { id: 'TARJETA_CREDITO', label: 'Tarjeta crédito', icon: '💳' },
+                { id: 'TARJETA_DEBITO', label: 'Tarjeta débito', icon: '💳' },
+              ].map((op) => (
+                <button
+                  key={op.id}
+                  type="button"
+                  onClick={() => setMetodoPago(op.id as any)}
+                  style={{
+                    padding: '9px 12px', borderRadius: 8, cursor: 'pointer', fontSize: 12,
+                    fontWeight: metodoPago === op.id ? 600 : 400,
+                    border: metodoPago === op.id ? '2px solid #185FA5' : '1px solid #e2e8f0',
+                    background: metodoPago === op.id ? '#EFF6FF' : 'white',
+                    color: metodoPago === op.id ? '#1e3a8a' : '#475569',
+                    display: 'flex', alignItems: 'center', gap: 7,
+                  }}
+                >
+                  <span>{op.icon}</span>
+                  <span style={{ flex: 1, textAlign: 'left' }}>{op.label}</span>
+                  {metodoPago === op.id && <span style={{ color: '#185FA5', fontSize: 12 }}>✓</span>}
+                </button>
+              ))}
               <button
-                key={op.id}
                 type="button"
-                onClick={() => setMetodoPago(op.id as any)}
+                onClick={() => setMetodoPago('TRANSFERENCIA')}
                 style={{
-                  padding: '10px 12px', borderRadius: 8, cursor: 'pointer', fontSize: 13,
-                  fontWeight: metodoPago === op.id ? 600 : 400,
-                  border: metodoPago === op.id ? '2px solid #1d4ed8' : '1px solid #e2e8f0',
-                  background: metodoPago === op.id ? '#eff6ff' : 'white',
-                  color: metodoPago === op.id ? '#1e3a8a' : '#475569',
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  gridColumn: 'span 2', padding: '9px 12px', borderRadius: 8, cursor: 'pointer', fontSize: 12,
+                  fontWeight: metodoPago === 'TRANSFERENCIA' ? 600 : 400,
+                  border: metodoPago === 'TRANSFERENCIA' ? '2px solid #185FA5' : '1px solid #e2e8f0',
+                  background: metodoPago === 'TRANSFERENCIA' ? '#EFF6FF' : 'white',
+                  color: metodoPago === 'TRANSFERENCIA' ? '#1e3a8a' : '#475569',
+                  display: 'flex', alignItems: 'center', gap: 7,
                 }}
               >
-                {op.label}
-                {metodoPago === op.id && <span style={{ color: '#1d4ed8' }}>✓</span>}
+                <span>🏦</span>
+                <span style={{ flex: 1, textAlign: 'left' }}>Transferencia bancaria</span>
+                {metodoPago === 'TRANSFERENCIA' && <span style={{ color: '#185FA5', fontSize: 12 }}>✓</span>}
               </button>
-            ))}
-            {/* Transferencia ocupa fila completa */}
-            <button
-              type="button"
-              onClick={() => setMetodoPago('TRANSFERENCIA')}
-              style={{
-                gridColumn: 'span 2', padding: '10px 12px', borderRadius: 8, cursor: 'pointer', fontSize: 13,
-                fontWeight: metodoPago === 'TRANSFERENCIA' ? 600 : 400,
-                border: metodoPago === 'TRANSFERENCIA' ? '2px solid #1d4ed8' : '1px solid #e2e8f0',
-                background: metodoPago === 'TRANSFERENCIA' ? '#eff6ff' : 'white',
-                color: metodoPago === 'TRANSFERENCIA' ? '#1e3a8a' : '#475569',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              }}
-            >
-              🏦 Transferencia bancaria
-              {metodoPago === 'TRANSFERENCIA' && <span style={{ color: '#1d4ed8' }}>✓</span>}
-            </button>
-          </div>
-        </div>
-
-        {/* Efectivo: monto recibido y vuelto */}
-        {metodoPago === 'EFECTIVO' && (
-          <div style={{ background: '#f8fafc', borderRadius: 12, border: '1px solid #e2e8f0', padding: '0.875rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div>
-              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 6 }}>Monto recibido</div>
-              <input
-                type="number"
-                step="0.10"
-                min={cartTotal}
-                value={montoRecibido || ''}
-                onChange={(e) => setMontoRecibido(Number(e.target.value))}
-                style={{
-                  width: '100%', border: '1px solid #e2e8f0', borderRadius: 8,
-                  padding: '8px 10px', fontSize: 15, fontFamily: 'monospace',
-                  fontWeight: 600, outline: 'none',
-                }}
-              />
             </div>
+          </div>
+
+          {/* Selección de tarjeta */}
+          {(metodoPago === 'TARJETA_CREDITO' || metodoPago === 'TARJETA_DEBITO') && (
             <div>
-              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 6 }}>Vuelto</div>
-              <div style={{
-                padding: '8px 10px', fontSize: 15, fontFamily: 'monospace', fontWeight: 600,
-                borderRadius: 8, border: '1px solid',
-                borderColor: montoRecibido < cartTotal ? '#fca5a5' : '#6ee7b7',
-                background: montoRecibido < cartTotal ? '#fef2f2' : '#ecfdf5',
-                color: montoRecibido < cartTotal ? '#dc2626' : '#059669',
-              }}>
-                S/ {vueltoCalculado.toFixed(2)}
+              <div style={{ fontSize: 10, fontWeight: 600, color: '#94a3b8', letterSpacing: '.5px', textTransform: 'uppercase', marginBottom: 8 }}>Selecciona tu tarjeta</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
+                {[
+                  { id: 'VISA', label: 'Visa', bg: '#1A1F71', color: 'white', text: 'VISA' },
+                  { id: 'MASTERCARD', label: 'Mastercard', bg: '#EB001B', color: 'white', text: 'MC' },
+                  { id: 'AMEX', label: 'Amex', bg: '#007B5E', color: 'white', text: 'AMEX' },
+                  { id: 'DINERS', label: 'Diners', bg: '#004B87', color: 'white', text: 'DNR' },
+                  { id: 'BCP', label: 'BCP', bg: '#005EA8', color: 'white', text: 'BCP' },
+                  { id: 'INTERBANK', label: 'Interbank', bg: '#006B3F', color: 'white', text: 'IBK' },
+                  { id: 'BBVA', label: 'BBVA', bg: '#004F9F', color: 'white', text: 'BBVA' },
+                  { id: 'SCOTIABANK', label: 'Scotiabank', bg: '#E31837', color: 'white', text: 'SCO' },
+                ].map((card) => (
+                  <button
+                    key={card.id}
+                    type="button"
+                    onClick={() => setTarjetaSeleccionada(card.id)}
+                    style={{
+                      border: tarjetaSeleccionada === card.id ? '2px solid #185FA5' : '1px solid #e2e8f0',
+                      borderRadius: 8, padding: '6px 4px', cursor: 'pointer',
+                      background: tarjetaSeleccionada === card.id ? '#EFF6FF' : 'white',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                    }}
+                  >
+                    <div style={{ width: 32, height: 20, borderRadius: 3, background: card.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 700, color: card.color }}>
+                      {card.text}
+                    </div>
+                    <span style={{ fontSize: 9, color: '#64748b', textAlign: 'center' }}>{card.label}</span>
+                  </button>
+                ))}
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Botón confirmar */}
+          {/* Efectivo */}
+          {metodoPago === 'EFECTIVO' && (
+            <div style={{ background: '#f8fafc', borderRadius: 10, border: '1px solid #e2e8f0', padding: '10px 12px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div>
+                <div style={{ fontSize: 10, color: '#64748b', marginBottom: 5 }}>Monto recibido</div>
+                <input
+                  type="number" step="0.10" min={cartTotal}
+                  value={montoRecibido || ''}
+                  onChange={(e) => setMontoRecibido(Number(e.target.value))}
+                  style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 7, padding: '7px 9px', fontSize: 14, fontFamily: 'monospace', fontWeight: 600, outline: 'none', color: '#0f172a' }}
+                />
+              </div>
+              <div>
+                <div style={{ fontSize: 10, color: '#64748b', marginBottom: 5 }}>Vuelto</div>
+                <div style={{
+                  padding: '7px 9px', fontSize: 14, fontFamily: 'monospace', fontWeight: 600, borderRadius: 7, border: '1px solid',
+                  borderColor: montoRecibido < cartTotal ? '#fca5a5' : '#6ee7b7',
+                  background: montoRecibido < cartTotal ? '#fef2f2' : '#ecfdf5',
+                  color: montoRecibido < cartTotal ? '#dc2626' : '#059669',
+                }}>
+                  S/ {vueltoCalculado.toFixed(2)}
+                </div>
+              </div>
+            </div>
+          )}
+
+        </div>
+      )}
+
+      {/* Paso 2 — Confirmar */}
+      {pasoModal === 2 && (
+        <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+          {/* Datos cliente autocompletos */}
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 600, color: '#94a3b8', letterSpacing: '.5px', textTransform: 'uppercase', marginBottom: 8 }}>Cliente</div>
+            <div style={{ border: '1px solid #e2e8f0', borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10, background: '#f8fafc' }}>
+              <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, color: '#1e40af', flexShrink: 0 }}>
+                {selectedCliente?.razon_social_o_nombre?.slice(0, 2).toUpperCase()}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a' }}>{selectedCliente?.razon_social_o_nombre}</div>
+                <div style={{ fontSize: 11, color: '#64748b' }}>{selectedCliente?.tipo_documento} · {selectedCliente?.numero_documento}</div>
+              </div>
+            </div>
+            {(selectedCliente?.telefono || selectedCliente?.email || selectedCliente?.direccion) && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 6 }}>
+                {selectedCliente?.telefono && (
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 7, padding: '6px 10px' }}>
+                    <div style={{ fontSize: 10, color: '#94a3b8' }}>Teléfono</div>
+                    <div style={{ fontSize: 12, fontWeight: 500, color: '#0f172a' }}>{selectedCliente.telefono}</div>
+                  </div>
+                )}
+                {selectedCliente?.email && (
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 7, padding: '6px 10px' }}>
+                    <div style={{ fontSize: 10, color: '#94a3b8' }}>Email</div>
+                    <div style={{ fontSize: 12, fontWeight: 500, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedCliente.email}</div>
+                  </div>
+                )}
+                {selectedCliente?.direccion && (
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 7, padding: '6px 10px', gridColumn: 'span 2' }}>
+                    <div style={{ fontSize: 10, color: '#94a3b8' }}>Dirección</div>
+                    <div style={{ fontSize: 12, fontWeight: 500, color: '#0f172a' }}>{selectedCliente.direccion}</div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Resumen */}
+          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 5 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#64748b' }}>
+              <span>Comprobante</span><span style={{ fontWeight: 600, color: '#0f172a' }}>{tipoComprobante}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#64748b' }}>
+              <span>Método</span>
+              <span style={{ fontWeight: 600, color: '#0f172a' }}>
+                {metodoPago === 'EFECTIVO' ? 'Efectivo'
+                  : metodoPago === 'YAPE_PLIN' ? 'Yape / Plin'
+                  : metodoPago === 'TARJETA_CREDITO' ? `Crédito · ${tarjetaSeleccionada}`
+                  : metodoPago === 'TARJETA_DEBITO' ? `Débito · ${tarjetaSeleccionada}`
+                  : 'Transferencia'}
+              </span>
+            </div>
+            {metodoPago === 'EFECTIVO' && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#64748b' }}>
+                <span>Vuelto</span><span style={{ fontWeight: 600, color: '#059669' }}>S/ {vueltoCalculado.toFixed(2)}</span>
+              </div>
+            )}
+            <div style={{ height: 1, background: '#e2e8f0', margin: '3px 0' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#64748b' }}>
+              <span>Subtotal</span><span>S/ {cartSubtotal.toFixed(2)}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#64748b' }}>
+              <span>IGV (18%)</span><span>S/ {cartIgv.toFixed(2)}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, fontWeight: 700, color: '#0f172a', paddingTop: 5, borderTop: '1px solid #e2e8f0', marginTop: 2 }}>
+              <span>Total</span><span style={{ fontFamily: 'monospace' }}>S/ {cartTotal.toFixed(2)}</span>
+            </div>
+          </div>
+
+          {/* Confirmación visual */}
+          <div style={{ background: '#ecfdf5', border: '1px solid #6ee7b7', borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 18 }}>🛡️</span>
+            <span style={{ fontSize: 12, color: '#065f46' }}>Listo. Al confirmar se registra la venta y se emite el comprobante.</span>
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      <div style={{ padding: '10px 16px', borderTop: '1px solid #f1f5f9', display: 'flex', gap: 8 }}>
+        {pasoModal === 2 && (
+          <button
+            type="button"
+            onClick={() => setPasoModal(1)}
+            style={{ padding: '9px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: 'white', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#475569', display: 'flex', alignItems: 'center', gap: 5 }}
+          >
+            ← Atrás
+          </button>
+        )}
         <button
           type="button"
           disabled={metodoPago === 'EFECTIVO' && montoRecibido < cartTotal}
-          onClick={() => executeVenta(selectedCliente!)}
+          onClick={() => {
+            if (pasoModal === 1) {
+              setPasoModal(2);
+            } else {
+              executeVenta(selectedCliente!);
+            }
+          }}
           style={{
-            width: '100%', padding: '12px', borderRadius: 10, border: 'none',
-            background: metodoPago === 'EFECTIVO' && montoRecibido < cartTotal ? '#94a3b8' : '#1d4ed8',
-            color: 'white', fontSize: 14, fontWeight: 700, cursor: metodoPago === 'EFECTIVO' && montoRecibido < cartTotal ? 'not-allowed' : 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            flex: 1, padding: '10px', borderRadius: 8, border: 'none',
+            background: metodoPago === 'EFECTIVO' && montoRecibido < cartTotal ? '#94a3b8'
+              : pasoModal === 2 ? '#0F6E56' : '#185FA5',
+            color: 'white', fontSize: 13, fontWeight: 700,
+            cursor: metodoPago === 'EFECTIVO' && montoRecibido < cartTotal ? 'not-allowed' : 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
           }}
         >
-          🧾 Confirmar y emitir comprobante
+          {pasoModal === 1 ? <>Continuar →</> : <>🧾 Emitir comprobante</>}
         </button>
-
       </div>
+
     </div>
   </div>
 )}
 
+      
       {/* Teclado rápido — panel flotante */}
       {showShortcuts && (
         <div className="fixed bottom-6 right-6 z-40 w-72 bg-white/95 backdrop-blur-sm rounded-xl border border-slate-200 shadow-xl p-4 space-y-3 animate-fade-in-up">
