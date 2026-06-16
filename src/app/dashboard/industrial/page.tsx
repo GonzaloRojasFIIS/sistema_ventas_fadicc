@@ -651,6 +651,50 @@ function WizardModal({
   const [contactosEmpresa, setContactosEmpresa] = useState<{ id: string; nombre: string; cargo?: string; email?: string; es_principal?: boolean }[]>([]);
   const [loadingContactos, setLoadingContactos] = useState(false);
 
+  // --- Configurador Custom ---
+const [customConfigOpen, setCustomConfigOpen] = useState(false);
+const [material, setMaterial] = useState<'304' | '430' | 'FIERRO'>('304');
+const [hornillas, setHornillas] = useState<number>(4);
+const [presion, setPresion] = useState<'ALTA' | 'BAJA'>('ALTA');
+const [tipoBase, setTipoBase] = useState<'MESA' | 'HORNO' | 'PAGOPLANCHA'>('MESA');
+const [anchoEspecial, setAnchoEspecial] = useState<boolean>(false);
+const [precioPactadoCustom, setPrecioPactadoCustom] = useState<number>(0);
+
+const { costoTotalCustom, precioSugeridoCustom, desgloseCustom } = useMemo(() => {
+  const costoMat = material === '304' ? 800 : material === '430' ? 500 : 300;
+  const sugeridoMat = material === '304' ? 1200 : material === '430' ? 800 : 500;
+  const costoHorn = hornillas * 80;
+  const sugeridoHorn = hornillas * 120;
+  const costoPres = presion === 'ALTA' ? hornillas * 60 : hornillas * 30;
+  const sugeridoPres = presion === 'ALTA' ? hornillas * 90 : hornillas * 50;
+  const costoB = tipoBase === 'HORNO' ? 650 : tipoBase === 'PAGOPLANCHA' ? 300 : 120;
+  const sugeridoB = tipoBase === 'HORNO' ? 1000 : tipoBase === 'PAGOPLANCHA' ? 450 : 200;
+  const anchoExtra = anchoEspecial ? costoMat * 0.25 : 0;
+  const anchoExtraS = anchoEspecial ? sugeridoMat * 0.25 : 0;
+
+  return {
+    costoTotalCustom: Math.round(costoMat + costoHorn + costoPres + costoB + anchoExtra),
+    precioSugeridoCustom: Math.round(sugeridoMat + sugeridoHorn + sugeridoPres + sugeridoB + anchoExtraS),
+    // Desglose para mostrar tabla
+    desgloseCustom: [
+      { label: `Material (${material === '304' ? 'Acero 304' : material === '430' ? 'Acero 430' : 'Fierro'})`, costo: costoMat, sugerido: sugeridoMat },
+      { label: `${hornillas} Hornillas`, costo: costoHorn, sugerido: sugeridoHorn },
+      { label: `Quemadores ${presion === 'ALTA' ? 'Alta' : 'Baja'} Presión`, costo: costoPres, sugerido: sugeridoPres },
+      { label: `Base: ${tipoBase === 'HORNO' ? 'Horno' : tipoBase === 'PAGOPLANCHA' ? 'Plancha/Parrilla' : 'Mesa'}`, costo: costoB, sugerido: sugeridoB },
+      ...(anchoEspecial ? [{ label: 'Extra ancho especial (+25%)', costo: Math.round(anchoExtra), sugerido: Math.round(anchoExtraS) }] : []),
+    ],
+  };
+}, [material, hornillas, presion, tipoBase, anchoEspecial]);
+
+useEffect(() => {
+  setPrecioPactadoCustom(precioSugeridoCustom);
+}, [precioSugeridoCustom]);
+
+const margenCustom = useMemo(() => {
+  if (precioPactadoCustom <= 0) return 0;
+  return Math.round(((precioPactadoCustom - costoTotalCustom) / precioPactadoCustom) * 100);
+}, [precioPactadoCustom, costoTotalCustom]);
+
   const filteredClients = useMemo(() => {
     const q = clientSearch.toLowerCase().trim();
     if (!q) return clients;
@@ -675,12 +719,13 @@ function WizardModal({
     [lines]
   );
 
-  const addProduct = (p: Producto) => {
-    setLines(prev => {
-      if (prev.find(l => l.producto.id === p.id)) return prev;
-      return [...prev, { producto: p, cantidad: 1, precio_pactado: p.precio_base }];
-    });
-  };
+const addProduct = (p: Producto) => {
+  setLines(prev => {
+    const isCustom = p.sku === 'FAD-CUSTOM';
+    if (!isCustom && prev.find(l => l.producto.id === p.id)) return prev;
+    return [...prev, { producto: p, cantidad: 1, precio_pactado: p.precio_base }];
+  });
+};
 
   const updateLine = (idx: number, patch: Partial<WizardLine>) => {
     setLines(prev =>
@@ -716,7 +761,40 @@ function WizardModal({
     });
     setLoading(false);
   };
+  const handleAgregarCocinaCustom = () => {
+  // Validación de margen mínimo
+  if (precioPactadoCustom < costoTotalCustom) {
+    alert('⚠️ El precio pactado no puede ser menor al costo de fabricación.');
+    return;
+  }
+  
+  const matLabel = material === '304' ? 'AISI 304' : material === '430' ? 'AISI 430' : 'Fierro';
+  const baseLabel = tipoBase === 'HORNO' ? 'c/Horno' : tipoBase === 'PAGOPLANCHA' ? 'c/Plancha-Parrilla' : 'c/Mesa y Patas';
+  const specialLabel = anchoEspecial ? ' [Medidas Especiales]' : '';
+  const customName = `Cocina a Medida ${hornillas}H ${presion === 'ALTA' ? 'Alta' : 'Baja'} Presión, ${matLabel}, ${baseLabel}${specialLabel}`;
+  const customSku = `CUS-${material}-${hornillas}H-${presion[0]}-${tipoBase.slice(0,3)}`;
 
+  setLines(prev => [
+    ...prev,
+    {
+      producto: {
+        id: '00000000-0000-0000-0000-000000000000',
+        sku: customSku,
+        nombre: customName,
+        precio_base: precioSugeridoCustom,
+        stock_actual: 999,
+        stock_minimo: 0,
+      } as Producto,
+      cantidad: 1,
+      precio_pactado: precioPactadoCustom,
+    }
+  ]);
+  setCustomConfigOpen(false);
+};
+
+
+
+  
   const handleSelectClient = async (cliente: Cliente) => {
     setSelectedClient(cliente);
     setSelectedContacto(null);
@@ -837,6 +915,7 @@ function WizardModal({
     if (s === 2) return lines.length > 0;
     return true;
   };
+  
 
   const Stepper = () => (
     <div className="flex items-center gap-2 mb-6">
@@ -947,12 +1026,24 @@ function WizardModal({
         {step === 2 && (
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="md:col-span-3 space-y-3">
-              <GlassInput
-                placeholder="Buscar producto por SKU o nombre..."
-                value={productSearch}
-                onChange={e => setProductSearch(e.target.value)}
-                iconLeft={<Search className="w-4 h-4" />}
-              />
+             <div className="flex gap-2">
+  <div className="flex-1">
+    <GlassInput
+      placeholder="Buscar producto por SKU o nombre..."
+      value={productSearch}
+      onChange={e => setProductSearch(e.target.value)}
+      iconLeft={<Search className="w-4 h-4" />}
+    />
+  </div>
+  <GradientButton 
+    variant="secondary" 
+    size="md" 
+    onClick={() => setCustomConfigOpen(true)}
+    className="shrink-0 font-bold border border-orange-200 text-orange-700"
+  >
+    🛠️ Cocina a Medida
+  </GradientButton>
+</div>
               <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
                 {filteredProducts.map(p => (
                   <div
@@ -1226,6 +1317,82 @@ function WizardModal({
     </GradientModal>
   );
 }
+<GradientModal
+  isOpen={customConfigOpen}
+  onClose={() => setCustomConfigOpen(false)}
+  title="🛠️ Configurador de Cocina a Medida"
+  size="lg"
+>
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-2">
+    {/* Controles — igual al plan original */}
+    <div className="md:col-span-2 space-y-4">
+      {/* ... material, hornillas, presion, tipoBase, anchoEspecial ... */}
+    </div>
+
+    {/* Panel de costeo MEJORADO con desglose */}
+    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+      <h4 className="text-xs font-extrabold uppercase tracking-wide text-slate-500">Desglose de Costo</h4>
+      
+      {/* NUEVA tabla de desglose */}
+      <div className="space-y-1">
+        {desgloseCustom.map((item, i) => (
+          <div key={i} className="flex justify-between text-xs text-slate-600">
+            <span className="truncate pr-2">{item.label}</span>
+            <span className="font-mono font-semibold shrink-0">S/ {item.costo}</span>
+          </div>
+        ))}
+        <div className="border-t border-slate-200 pt-1 flex justify-between text-xs font-bold text-slate-800">
+          <span>Total Costo</span>
+          <span className="font-mono">S/ {costoTotalCustom.toFixed(2)}</span>
+        </div>
+        <div className="flex justify-between text-xs text-slate-500">
+          <span>Precio Sugerido:</span>
+          <span className="font-mono font-semibold">S/ {precioSugeridoCustom.toFixed(2)}</span>
+        </div>
+      </div>
+
+      {/* Precio pactado + margen — igual al plan original */}
+      <div className="border-t border-dashed border-slate-200 pt-3">
+        <label className="text-xs font-extrabold text-slate-700 block mb-1">Precio Pactado (S/)</label>
+        <input
+          type="number" min={0}
+          value={precioPactadoCustom || ''}
+          onChange={e => setPrecioPactadoCustom(Number(e.target.value))}
+          className="w-full bg-white border border-slate-200 rounded-lg p-2 text-sm font-mono font-bold text-slate-900 focus:ring-2 focus:ring-orange-500/20"
+        />
+      </div>
+
+      {/* Barra de margen */}
+      <div className="space-y-1">
+        <div className="flex justify-between text-[10px] font-bold text-slate-500">
+          <span>Margen:</span>
+          <span className={margenCustom >= 35 ? 'text-green-600' : margenCustom >= 25 ? 'text-amber-500' : 'text-red-500'}>
+            {margenCustom}%
+          </span>
+        </div>
+        <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+          <div
+            className={`h-full transition-all duration-300 ${margenCustom >= 35 ? 'bg-green-500' : margenCustom >= 25 ? 'bg-amber-400' : 'bg-red-500'}`}
+            style={{ width: `${Math.max(0, Math.min(100, margenCustom))}%` }}
+          />
+        </div>
+        <p className="text-[10px] text-slate-400 text-center">
+          {margenCustom < 0 ? '🚫 Por debajo del costo' : margenCustom >= 35 ? '✅ Margen excelente' : margenCustom >= 25 ? '⚠️ Margen bajo' : '🚨 Precio muy bajo'}
+        </p>
+      </div>
+
+      <GradientButton
+        variant="primary" size="md"
+        className="w-full font-bold"
+        onClick={handleAgregarCocinaCustom}
+        disabled={precioPactadoCustom < costoTotalCustom}
+      >
+        Agregar a Proforma
+      </GradientButton>
+    </div>
+  </div>
+</GradientModal>
+
 
 // =========================================================================
 // PÁGINA PRINCIPAL
@@ -1429,7 +1596,7 @@ export default function IndustrialPage() {
       </div>
 
       {/* Kanban */}
-      <div className="flex gap-4 overflow-x-auto pb-4">
+       gap-4 overflow-x-auto pb-4">
         {columns.map(col => (
           <div key={col.estado} className="flex-shrink-0 w-[300px]">
             <div className="flex items-center justify-between mb-3 px-1">
