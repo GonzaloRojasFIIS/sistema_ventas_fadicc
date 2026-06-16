@@ -18,8 +18,8 @@ export async function getProformas(): Promise<Proforma[]> {
         representante_nombre: p.usuarios?.nombre || 'Representante',
         detalles: p.proforma_detalles ? p.proforma_detalles.map((d: any) => ({
           producto_id: d.producto_id,
-          nombre: d.productos?.nombre || 'Producto',
-          sku: d.productos?.sku || '',
+          nombre: d.nombre || d.productos?.nombre || 'Producto',
+          sku: d.sku || d.productos?.sku || '',
           cantidad: d.cantidad,
           precio_pactado: d.precio_pactado,
           subtotal: d.subtotal,
