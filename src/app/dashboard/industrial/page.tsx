@@ -661,14 +661,14 @@ const [anchoEspecial, setAnchoEspecial] = useState<boolean>(false);
 const [precioPactadoCustom, setPrecioPactadoCustom] = useState<number>(0);
 
 const { costoTotalCustom, precioSugeridoCustom, desgloseCustom } = useMemo(() => {
-  const costoMat = material === '304' ? 800 : material === '430' ? 500 : 300;
-  const sugeridoMat = material === '304' ? 1200 : material === '430' ? 800 : 500;
-  const costoHorn = hornillas * 80;
-  const sugeridoHorn = hornillas * 120;
-  const costoPres = presion === 'ALTA' ? hornillas * 60 : hornillas * 30;
-  const sugeridoPres = presion === 'ALTA' ? hornillas * 90 : hornillas * 50;
-  const costoB = tipoBase === 'HORNO' ? 650 : tipoBase === 'PAGOPLANCHA' ? 300 : 120;
-  const sugeridoB = tipoBase === 'HORNO' ? 1000 : tipoBase === 'PAGOPLANCHA' ? 450 : 200;
+  const costoMat = material === '304' ? 2800 : material === '430' ? 1800 : 900;
+  const sugeridoMat = material === '304' ? 4200 : material === '430' ? 2800 : 1400;
+  const costoHorn = hornillas * 280;
+  const sugeridoHorn = hornillas * 420;
+  const costoPres = presion === 'ALTA' ? hornillas * 180 : hornillas * 90;
+  const sugeridoPres = presion === 'ALTA' ? hornillas * 270 : hornillas * 140;
+  const costoB = tipoBase === 'HORNO' ? 1800 : tipoBase === 'PAGOPLANCHA' ? 900 : 350;
+  const sugeridoB = tipoBase === 'HORNO' ? 2800 : tipoBase === 'PAGOPLANCHA' ? 1400 : 550;
   const anchoExtra = anchoEspecial ? costoMat * 0.25 : 0;
   const anchoExtraS = anchoEspecial ? sugeridoMat * 0.25 : 0;
 
@@ -782,6 +782,7 @@ const addProduct = (p: Producto) => {
         sku: customSku,
         nombre: customName,
         precio_base: precioSugeridoCustom,
+        imagen: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 56 56"><rect width="56" height="56" rx="10" fill="#f97316"/><text x="28" y="22" text-anchor="middle" fill="white" font-size="8" font-weight="bold" font-family="sans-serif">PERSO</text><text x="28" y="34" text-anchor="middle" fill="white" font-size="8" font-weight="bold" font-family="sans-serif">NALI</text><text x="28" y="46" text-anchor="middle" fill="white" font-size="8" font-weight="bold" font-family="sans-serif">ZADO</text></svg>'),
         stock_actual: 999,
         stock_minimo: 0,
       } as Producto,
@@ -1346,16 +1347,14 @@ const addProduct = (p: Producto) => {
             {/* Hornillas */}
             <div>
               <label className="text-xs font-bold text-slate-700 block mb-1">Número de Hornillas</label>
-              <div className="flex gap-2">
-                {[1, 2, 3, 4, 6].map(num => (
-                  <button key={num} type="button" onClick={() => setHornillas(num)}
-                    className={`w-10 h-10 rounded-full border text-sm font-bold flex items-center justify-center transition-all ${
-                      hornillas === num ? 'border-orange-500 bg-orange-50 text-orange-950 ring-2 ring-orange-500/10' : 'border-slate-200 hover:bg-slate-50 text-slate-600'
-                    }`}>
-                    {num}
-                  </button>
-                ))}
-              </div>
+              <input
+                type="number"
+                min={1}
+                max={20}
+                value={hornillas}
+                onChange={e => setHornillas(Math.max(1, parseInt(e.target.value) || 1))}
+                className="w-full bg-white border border-slate-200 rounded-lg p-2 text-sm font-mono font-bold text-slate-900 focus:ring-2 focus:ring-orange-500/20"
+              />
             </div>
             {/* Presión */}
             <div>
