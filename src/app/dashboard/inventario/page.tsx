@@ -51,11 +51,11 @@ export default function InventarioPage() {
   const [drawerHistorialOpen, setDrawerHistorialOpen] = useState(false);
   const [productoHistorial, setProductoHistorial] = useState<ProductoDb | null>(null);
 
-  const [tabActivo, setTabActivo] = useState<'stock' | 'kardex'>('stock');
-  const [productoKardexId, setProductoKardexId] = useState<string>('');
-  const [movimientosKardex, setMovimientosKardex] = useState<MovimientoStock[]>([]);
-  const [kardexCalculado, setKardexCalculado] = useState<{ mov: MovimientoStock; saldo: number }[]>([]);
-  const [kardexLoading, setKardexLoading] = useState(false);
+  const [tabActivo, setTabActivo] = useState<'stock' | 'movimientos'>('stock');
+  const [productoFiltroId, setProductoFiltroId] = useState<string>('');
+  const [movimientosList, setMovimientosList] = useState<MovimientoStock[]>([]);
+  const [movimientosConSaldo, setMovimientosConSaldo] = useState<{ mov: MovimientoStock; saldo: number }[]>([]);
+  const [loadingMovs, setLoadingMovs] = useState(false);
 
   const [dbStatus, setDbStatus] = useState<'conectado' | 'desconectado' | 'verificando'>('verificando');
   const [localMovsCount, setLocalMovsCount] = useState(0);
@@ -93,11 +93,11 @@ export default function InventarioPage() {
   }, []);
 
   useEffect(() => {
-    async function loadKardex() {
-      setKardexLoading(true);
+    async function loadMovs() {
+      setLoadingMovs(true);
       try {
-        const movs = productoKardexId
-          ? await getMovimientosStock(productoKardexId)
+        const movs = productoFiltroId
+          ? await getMovimientosStock(productoFiltroId)
           : await getMovimientosStock();
         const ordenados = [...movs].sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
         const saldosPorProducto: Record<string, number> = {};
@@ -107,16 +107,16 @@ export default function InventarioPage() {
           saldosPorProducto[m.producto_id] = saldo;
           return { mov: m, saldo };
         });
-        setMovimientosKardex(ordenados);
-        setKardexCalculado(calculados);
+        setMovimientosList(ordenados);
+        setMovimientosConSaldo(calculados);
       } catch (err) {
-        console.error('Error cargando kardex:', err);
+        console.error('Error cargando movimientos:', err);
       } finally {
-        setKardexLoading(false);
+        setLoadingMovs(false);
       }
     }
-    loadKardex();
-  }, [productoKardexId, movimientos]);
+    loadMovs();
+  }, [productoFiltroId, movimientos]);
 
   const categorias = useMemo(() => {
     const cats = new Set(productos.map((p) => p.categoria || 'General'));
@@ -256,11 +256,11 @@ export default function InventarioPage() {
           Stock
         </GradientButton>
         <GradientButton
-          variant={tabActivo === 'kardex' ? 'primary' : 'secondary'}
+          variant={tabActivo === 'movimientos' ? 'primary' : 'secondary'}
           size="sm"
-          onClick={() => setTabActivo('kardex')}
+          onClick={() => setTabActivo('movimientos')}
         >
-          Kardex
+          Movimientos de Stock
         </GradientButton>
       </div>
 
@@ -370,15 +370,15 @@ export default function InventarioPage() {
         </>
       )}
 
-      {tabActivo === 'kardex' && (
+      {tabActivo === 'movimientos' && (
         <GradientCard className="overflow-hidden p-6 space-y-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
             <div className="w-full sm:w-80">
               <label className="block text-sm font-semibold text-slate-700 mb-1">Producto</label>
               <select
                 className="w-full bg-white/80 backdrop-blur-sm border border-slate-200 rounded-lg text-sm text-slate-800 outline-none transition-all duration-150 focus:bg-white focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20 px-3.5 py-2.5"
-                value={productoKardexId}
-                onChange={(e) => setProductoKardexId(e.target.value)}
+                value={productoFiltroId}
+                onChange={(e) => setProductoFiltroId(e.target.value)}
               >
                 <option value="">Todos los productos</option>
                 {productos.map((p) => (
@@ -388,9 +388,9 @@ export default function InventarioPage() {
                 ))}
               </select>
             </div>
-            {productoKardexId && (
+            {productoFiltroId && (
               <div className="text-sm text-slate-600">
-                Stock actual: <strong className="text-slate-900">{productos.find(p => p.id === productoKardexId)?.stock_actual ?? '—'}</strong>
+                Stock actual: <strong className="text-slate-900">{productos.find(p => p.id === productoFiltroId)?.stock_actual ?? '—'}</strong>
               </div>
             )}
             <div className="flex-1" />
@@ -398,10 +398,10 @@ export default function InventarioPage() {
               variant="secondary"
               size="sm"
               onClick={() => {
-                const ev = { target: { value: productoKardexId } } as React.ChangeEvent<HTMLSelectElement>;
-                setProductoKardexId(ev.target.value);
+                const ev = { target: { value: productoFiltroId } } as React.ChangeEvent<HTMLSelectElement>;
+                setProductoFiltroId(ev.target.value);
               }}
-              disabled={kardexLoading}
+              disabled={loadingMovs}
             >
               <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -410,7 +410,7 @@ export default function InventarioPage() {
             </GradientButton>
           </div>
 
-          {kardexLoading ? (
+          {loadingMovs ? (
             <div className="flex items-center justify-center py-16">
               <div className="h-8 w-8 rounded-full border-2 border-orange-500 border-t-transparent animate-spin" />
             </div>
@@ -420,7 +420,7 @@ export default function InventarioPage() {
                 <thead>
                   <tr className="bg-slate-50/60 border-b border-slate-100">
                     <th className="text-left px-4 py-3 font-semibold text-slate-700">Fecha</th>
-                    {!productoKardexId && <th className="text-left px-4 py-3 font-semibold text-slate-700">Producto</th>}
+                    {!productoFiltroId && <th className="text-left px-4 py-3 font-semibold text-slate-700">Producto</th>}
                     <th className="text-left px-4 py-3 font-semibold text-slate-700">Tipo</th>
                     <th className="text-left px-4 py-3 font-semibold text-slate-700">Motivo</th>
                     <th className="text-right px-4 py-3 font-semibold text-slate-700">Cantidad</th>
@@ -428,10 +428,10 @@ export default function InventarioPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {kardexCalculado.map(({ mov, saldo }) => (
+                  {movimientosConSaldo.map(({ mov, saldo }) => (
                     <tr key={mov.id} className="border-b border-slate-100 hover:bg-slate-50/40">
                       <td className="px-4 py-3 text-slate-600">{new Date(mov.fecha).toLocaleDateString('es-PE')}</td>
-                      {!productoKardexId && (
+                      {!productoFiltroId && (
                         <td className="px-4 py-3 text-slate-800 font-medium">
                           {mov.producto_nombre ?? productos.find(p => p.id === mov.producto_id)?.nombre ?? mov.producto_id}
                         </td>
@@ -448,9 +448,9 @@ export default function InventarioPage() {
                       <td className="px-4 py-3 text-right font-bold text-slate-800">{saldo}</td>
                     </tr>
                   ))}
-                  {kardexCalculado.length === 0 && (
+                  {movimientosConSaldo.length === 0 && (
                     <tr>
-                      <td colSpan={productoKardexId ? 5 : 6} className="px-4 py-8 text-center text-slate-400">
+                      <td colSpan={productoFiltroId ? 5 : 6} className="px-4 py-8 text-center text-slate-400">
                         No hay movimientos registrados.
                       </td>
                     </tr>

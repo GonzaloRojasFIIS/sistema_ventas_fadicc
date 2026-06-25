@@ -272,6 +272,11 @@ INSERT INTO productos (sku, nombre, descripcion, categoria, precio_base, costo, 
 ('FAD-HAAC', 'Horno Acero', 'Horno industrial de acero inoxidable.', 'Hornos', 2899.00, 1900.00, 3, 1, '/cocinas/Horno-Acero.png'),
 ('FAD-CHIF', 'Chifero y Fogones', 'Equipo de chifero con fogones.', 'Accesorios', 1999.00, 1300.00, 5, 2, '/cocinas/Chiferos-y-Fogones.png');
 
+-- Producto comodín para cocinas a medida personalizadas
+INSERT INTO productos (id, sku, nombre, descripcion, categoria, precio_base, costo, stock_actual, stock_minimo)
+VALUES ('00000000-0000-0000-0000-000000000000', 'FAD-CUSTOM', 'Cocina a Medida Personalizada', 'Configuraciones de cocinas y equipos industriales a medida.', 'Cocinas', 0.00, 0.00, 999, 0)
+ON CONFLICT (id) DO NOTHING;
+
 -- Personas naturales
 INSERT INTO clientes (tipo_documento, numero_documento, razon_social_o_nombre, telefono, email, direccion, tipo_cliente) VALUES
 ('DNI', '45678231', 'Juan Pérez García', '987654321', 'juan.perez@mail.com', 'Av. Principal 123, Lima', 'PERSONA');

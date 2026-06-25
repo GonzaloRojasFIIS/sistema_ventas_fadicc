@@ -509,3 +509,65 @@ export async function generarPdfFactura(data: {
   addFooter(doc, 285);
   doc.save(`FACTURA_${data.numero_comprobante}.pdf`);
 }
+
+export async function generarPdfOrdenPago(data: {
+  codigo_op: string;
+  proforma_codigo: string;
+  cliente_nombre: string;
+  monto: number;
+  banco: string;
+  fecha_creacion: string;
+}) {
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const logoBase64 = await loadLogoBase64();
+
+  addHeaderInfo(doc, `ORDEN DE PAGO N° ${data.codigo_op}`, data.fecha_creacion, logoBase64);
+
+  // Datos
+  doc.setFontSize(10);
+  doc.setTextColor(15, 23, 42);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Cliente: ${data.cliente_nombre || 'Cliente'}`, 14, 38);
+  doc.text(`Concepto: Pago de Proforma ${data.proforma_codigo}`, 14, 44);
+  doc.text(`Banco Destinatario: ${data.banco}`, 14, 50);
+  doc.text(`Estado: GENERADA / PENDIENTE`, 14, 56);
+  doc.text(`Fecha Emisión: ${new Date(data.fecha_creacion).toLocaleString('es-PE')}`, 14, 62);
+
+  // Un recuadro grande y elegante para el monto a pagar
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, 70, 182, 35, 3, 3, 'FD');
+
+  doc.setFontSize(11);
+  doc.setTextColor(100, 116, 139);
+  doc.setFont('helvetica', 'normal');
+  doc.text('MONTO A PAGAR:', 20, 80);
+
+  doc.setFontSize(22);
+  doc.setTextColor(139, 30, 30); // El color rojo oscuro #8B1E1E
+  doc.setFont('helvetica', 'bold');
+  doc.text(`S/ ${data.monto.toFixed(2)}`, 20, 95);
+
+  // Instrucciones de pago
+  doc.setFontSize(10);
+  doc.setTextColor(71, 85, 105);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Instrucciones de Pago:', 14, 120);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.text(`1. Ingrese a la banca móvil de ${data.banco} o acérquese a un agente autorizado.`, 14, 128);
+  doc.text(`2. Realice una transferencia o pago de servicio por el monto de S/ ${data.monto.toFixed(2)}.`, 14, 134);
+  doc.text(`3. Utilice el código de referencia ${data.codigo_op} e indique el pago de proforma ${data.proforma_codigo}.`, 14, 140);
+  doc.text(`4. Una vez procesado, envíe el voucher a su representante comercial para registrar la conformidad.`, 14, 146);
+
+  // Notas y pie
+  doc.setFontSize(8);
+  doc.setTextColor(148, 163, 184);
+  doc.text('Este documento sirve como comprobante de trámite de pago iniciado y no constituye una factura o boleta oficial.', 14, 270);
+  doc.text('FADICC S.A. - RUC: 20123456789 - Central de Ventas Industriales.', 14, 274);
+
+  addFooter(doc, 285);
+  doc.save(`ORDEN_PAGO_${data.codigo_op}.pdf`);
+}
+

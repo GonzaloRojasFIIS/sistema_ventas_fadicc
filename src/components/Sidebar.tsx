@@ -15,6 +15,7 @@ import {
   ReportesIcon,
   LogoutIcon,
   DollarSignIcon,
+  BillIcon,
 } from '@/components/Icons';
 
 const navItems = [
@@ -24,6 +25,7 @@ const navItems = [
   { href: '/dashboard/produccion', label: 'Planta y Despachos', icon: ProduccionIcon, roles: ['ADMIN', 'PRODUCCION', 'ALMACEN'] },
   { href: '/dashboard/inventario', label: 'Inventario', icon: InventarioIcon, roles: ['ADMIN', 'ALMACEN', 'VENDEDOR', 'REPRESENTANTE'] },
   { href: '/dashboard/clientes', label: 'Clientes', icon: ClientesIcon, roles: ['ADMIN', 'VENDEDOR', 'REPRESENTANTE'] },
+  { href: '/dashboard/tramites', label: 'Trámites', icon: BillIcon, roles: ['ADMIN', 'VENDEDOR', 'REPRESENTANTE'] },
   { href: '/dashboard/mis-ventas', label: 'Mis Ventas', icon: DollarSignIcon, roles: ['ADMIN', 'VENDEDOR', 'REPRESENTANTE'] },
   { href: '/dashboard/reportes', label: 'Reportes', icon: ReportesIcon, roles: ['ADMIN'] },
   { href: '/dashboard/admin', label: 'Administración', icon: AdminIcon, roles: ['ADMIN'] },

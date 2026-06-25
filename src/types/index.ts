@@ -178,6 +178,19 @@ export interface OrdenPedido {
   total?: number;
 }
 
+export interface OrdenPago {
+  id: string;
+  proforma_id: string;
+  proforma_codigo: string;
+  cliente_id: string;
+  cliente_nombre: string;
+  monto: number;
+  banco: 'BCP' | 'Scotiabank' | 'Niubiz';
+  codigo_op: string;
+  fecha_creacion: string;
+  estado: 'GENERADA' | 'PAGADA';
+}
+
 export interface KpiData {
   venta_comercial_hoy: number;
   venta_comercial_ayer: number;

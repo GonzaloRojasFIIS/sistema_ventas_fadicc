@@ -169,6 +169,11 @@ FROM generate_series(1, 20) g
 CROSS JOIN LATERAL (SELECT id, stock_actual FROM productos ORDER BY random() LIMIT 1) p
 ON CONFLICT DO NOTHING;
 
+-- Asegurar producto comodín para cocinas a medida personalizadas
+INSERT INTO productos (id, sku, nombre, descripcion, categoria, precio_base, costo, stock_actual, stock_minimo)
+VALUES ('00000000-0000-0000-0000-000000000000', 'FAD-CUSTOM', 'Cocina a Medida Personalizada', 'Configuraciones de cocinas y equipos industriales a medida.', 'Cocinas', 0.00, 0.00, 999, 0)
+ON CONFLICT (id) DO NOTHING;
+
 -- =========================================================================
 -- 8. VERIFICACIÓN
 -- =========================================================================

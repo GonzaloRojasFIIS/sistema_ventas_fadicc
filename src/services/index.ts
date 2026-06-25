@@ -6,3 +6,5 @@ export * from './proformaService';
 export * from './ordenService';
 export * from './usuarioService';
 export * from './kpiService';
+export * from './ordenPagoService';
+

@@ -31,14 +31,15 @@ import GradientModal from '@/components/ui/GradientModal';
 import GradientDrawer from '@/components/ui/GradientDrawer';
 import GradientToast, { Alert } from '@/components/ui/GradientToast';
 
-import { Proforma, Producto, Cliente } from '@/types';
-import { getProformas, updateProformaEstado, createProforma } from '@/services/proformaService';
+import { Proforma, Producto, Cliente, OrdenPago } from '@/types';
+import { getProformas, updateProformaEstado, createProforma, getOrdenesPago, createOrdenPago } from '@/services';
 import { getProducts } from '@/services/productoService';
 import { getClients, createCliente, getEmpresaByClienteId, getContactosByEmpresaId } from '@/services/clienteService';
 import { convertToOrder } from '@/services/ordenService';
-import { generarPdfProforma } from '@/lib/pdfService';
+import { generarPdfProforma, generarPdfOrdenPago } from '@/lib/pdfService';
 import { enviarProformaEmailApi } from '@/lib/emailClient';
 import { useSession } from '@/context/SessionContext';
+import { ConfiguradorCocina } from './components/ConfiguradorCocina';
 
 // =========================================================================
 // TIPOS LOCALES
@@ -379,17 +380,24 @@ function DetailDrawer({
   onClose,
   onUpdateState,
   onConvert,
+  ordenesPago,
+  onGenerarOP,
 }: {
   proforma: Proforma | null;
   open: boolean;
   onClose: () => void;
   onUpdateState: (id: string, estado: EstadoProforma) => void;
   onConvert: (id: string) => void;
+  ordenesPago: OrdenPago[];
+  onGenerarOP: (proforma: Proforma) => void;
 }) {
   const [emailEnviando, setEmailEnviando] = useState(false);
   const [emailStatus, setEmailStatus] = useState<{ ok: boolean; msg: string } | null>(null);
 
   if (!proforma) return null;
+
+  const opRelacionada = ordenesPago.find(op => op.proforma_id === proforma.id);
+  const tieneOP = !!opRelacionada;
 
   const remaining = daysUntil(proforma.fecha_vencimiento);
   const isUrgent = remaining <= 3 && remaining >= 0;
@@ -557,10 +565,42 @@ function DetailDrawer({
           </>
         )}
         {proforma.estado === 'APROBADA' && (
-          <span className="text-xs text-blue-600 font-medium flex items-center gap-1">
-            <Check className="w-3.5 h-3.5" />
-            Convertida a orden de pedido
-          </span>
+          <div className="flex flex-col gap-2 items-start">
+            <span className="text-xs text-blue-600 font-medium flex items-center gap-1">
+              <Check className="w-3.5 h-3.5" />
+              Convertida a orden de pedido
+            </span>
+            {tieneOP ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs bg-orange-50 text-orange-700 border border-orange-200 px-2.5 py-1 rounded-full font-bold">
+                  💳 OP Generada: {opRelacionada.codigo_op}
+                </span>
+                <GradientButton
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => generarPdfOrdenPago({
+                    codigo_op: opRelacionada.codigo_op,
+                    proforma_codigo: proforma.codigo_proforma,
+                    cliente_nombre: proforma.cliente_nombre || '',
+                    monto: proforma.total,
+                    banco: opRelacionada.banco,
+                    fecha_creacion: opRelacionada.fecha_creacion,
+                  })}
+                >
+                  Descargar OP
+                </GradientButton>
+              </div>
+            ) : (
+              <GradientButton
+                variant="primary"
+                size="sm"
+                className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold"
+                onClick={() => onGenerarOP(proforma)}
+              >
+                💳 Generar Orden de Pago
+              </GradientButton>
+            )}
+          </div>
         )}
         <div className="flex-1" />
         {emailStatus && (
@@ -652,48 +692,7 @@ function WizardModal({
   const [loadingContactos, setLoadingContactos] = useState(false);
 
   // --- Configurador Custom ---
-const [customConfigOpen, setCustomConfigOpen] = useState(false);
-const [material, setMaterial] = useState<'304' | '430' | 'FIERRO'>('304');
-const [hornillas, setHornillas] = useState<number>(4);
-const [presion, setPresion] = useState<'ALTA' | 'BAJA'>('ALTA');
-const [tipoBase, setTipoBase] = useState<'MESA' | 'HORNO' | 'PAGOPLANCHA'>('MESA');
-const [anchoEspecial, setAnchoEspecial] = useState<boolean>(false);
-const [precioPactadoCustom, setPrecioPactadoCustom] = useState<number>(0);
-
-const { costoTotalCustom, precioSugeridoCustom, desgloseCustom } = useMemo(() => {
-  const costoMat = material === '304' ? 2800 : material === '430' ? 1800 : 900;
-  const sugeridoMat = material === '304' ? 4200 : material === '430' ? 2800 : 1400;
-  const costoHorn = hornillas * 280;
-  const sugeridoHorn = hornillas * 420;
-  const costoPres = presion === 'ALTA' ? hornillas * 180 : hornillas * 90;
-  const sugeridoPres = presion === 'ALTA' ? hornillas * 270 : hornillas * 140;
-  const costoB = tipoBase === 'HORNO' ? 1800 : tipoBase === 'PAGOPLANCHA' ? 900 : 350;
-  const sugeridoB = tipoBase === 'HORNO' ? 2800 : tipoBase === 'PAGOPLANCHA' ? 1400 : 550;
-  const anchoExtra = anchoEspecial ? costoMat * 0.25 : 0;
-  const anchoExtraS = anchoEspecial ? sugeridoMat * 0.25 : 0;
-
-  return {
-    costoTotalCustom: Math.round(costoMat + costoHorn + costoPres + costoB + anchoExtra),
-    precioSugeridoCustom: Math.round(sugeridoMat + sugeridoHorn + sugeridoPres + sugeridoB + anchoExtraS),
-    // Desglose para mostrar tabla
-    desgloseCustom: [
-      { label: `Material (${material === '304' ? 'Acero 304' : material === '430' ? 'Acero 430' : 'Fierro'})`, costo: costoMat, sugerido: sugeridoMat },
-      { label: `${hornillas} Hornillas`, costo: costoHorn, sugerido: sugeridoHorn },
-      { label: `Quemadores ${presion === 'ALTA' ? 'Alta' : 'Baja'} Presión`, costo: costoPres, sugerido: sugeridoPres },
-      { label: `Base: ${tipoBase === 'HORNO' ? 'Horno' : tipoBase === 'PAGOPLANCHA' ? 'Plancha/Parrilla' : 'Mesa'}`, costo: costoB, sugerido: sugeridoB },
-      ...(anchoEspecial ? [{ label: 'Extra ancho especial (+25%)', costo: Math.round(anchoExtra), sugerido: Math.round(anchoExtraS) }] : []),
-    ],
-  };
-}, [material, hornillas, presion, tipoBase, anchoEspecial]);
-
-useEffect(() => {
-  setPrecioPactadoCustom(precioSugeridoCustom);
-}, [precioSugeridoCustom]);
-
-const margenCustom = useMemo(() => {
-  if (precioPactadoCustom <= 0) return 0;
-  return Math.round(((precioPactadoCustom - costoTotalCustom) / precioPactadoCustom) * 100);
-}, [precioPactadoCustom, costoTotalCustom]);
+  const [customConfigOpen, setCustomConfigOpen] = useState(false);
 
   const filteredClients = useMemo(() => {
     const q = clientSearch.toLowerCase().trim();
@@ -761,37 +760,10 @@ const addProduct = (p: Producto) => {
     });
     setLoading(false);
   };
-  const handleAgregarCocinaCustom = () => {
-  // Validación de margen mínimo
-  if (precioPactadoCustom < costoTotalCustom) {
-    alert('⚠️ El precio pactado no puede ser menor al costo de fabricación.');
-    return;
-  }
-  
-  const matLabel = material === '304' ? 'AISI 304' : material === '430' ? 'AISI 430' : 'Fierro';
-  const baseLabel = tipoBase === 'HORNO' ? 'c/Horno' : tipoBase === 'PAGOPLANCHA' ? 'c/Plancha-Parrilla' : 'c/Mesa y Patas';
-  const specialLabel = anchoEspecial ? ' [Medidas Especiales]' : '';
-  const customName = `Cocina a Medida ${hornillas}H ${presion === 'ALTA' ? 'Alta' : 'Baja'} Presión, ${matLabel}, ${baseLabel}${specialLabel}`;
-  const customSku = `CUS-${material}-${hornillas}H-${presion[0]}-${tipoBase.slice(0,3)}`;
-
-  setLines(prev => [
-    ...prev,
-    {
-      producto: {
-        id: '00000000-0000-0000-0000-000000000000',
-        sku: customSku,
-        nombre: customName,
-        precio_base: precioSugeridoCustom,
-        imagen: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 56 56"><rect width="56" height="56" rx="10" fill="#f97316"/><text x="28" y="22" text-anchor="middle" fill="white" font-size="8" font-weight="bold" font-family="sans-serif">PERSO</text><text x="28" y="34" text-anchor="middle" fill="white" font-size="8" font-weight="bold" font-family="sans-serif">NALI</text><text x="28" y="46" text-anchor="middle" fill="white" font-size="8" font-weight="bold" font-family="sans-serif">ZADO</text></svg>'),
-        stock_actual: 999,
-        stock_minimo: 0,
-      } as Producto,
-      cantidad: 1,
-      precio_pactado: precioPactadoCustom,
-    }
-  ]);
-  setCustomConfigOpen(false);
-};
+  const handleAgregarCocinaCustom = (linea: WizardLine) => {
+    setLines(prev => [...prev, linea]);
+    setCustomConfigOpen(false);
+  };
 
 
 
@@ -1313,150 +1285,14 @@ const addProduct = (p: Producto) => {
             <GlassInput value={nuevoClienteDir} onChange={(e) => setNuevoClienteDir(e.target.value)} placeholder="Av. Principal 123" />
           </div>
           {nuevoClienteError && <p className="text-sm text-red-600 font-medium">{nuevoClienteError}</p>}
-</form>
+        </form>
       </GradientModal>
 
-      {/* ====== CONFIGURADOR COCINA A MEDIDA ====== */}
-      <GradientModal
+      <ConfiguradorCocina
         isOpen={customConfigOpen}
         onClose={() => setCustomConfigOpen(false)}
-        title="🛠️ Configurador de Cocina a Medida"
-        size="lg"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-2">
-          {/* Controles de Diseño */}
-          <div className="md:col-span-2 space-y-4">
-            {/* Material */}
-            <div>
-              <label className="text-xs font-bold text-slate-700 block mb-1">Materia Prima / Material</label>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { id: '304', name: 'Premium (Acero 304)' },
-                  { id: '430', name: 'Estándar (Acero 430)' },
-                  { id: 'FIERRO', name: 'Económico (Fierro)' }
-                ].map(op => (
-                  <button key={op.id} type="button" onClick={() => setMaterial(op.id as any)}
-                    className={`py-2 px-3 text-xs font-bold rounded-lg border transition-all ${
-                      material === op.id ? 'border-orange-500 bg-orange-50 text-orange-950' : 'border-slate-200 hover:bg-slate-50 text-slate-600'
-                    }`}>
-                    {op.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-            {/* Hornillas */}
-            <div>
-              <label className="text-xs font-bold text-slate-700 block mb-1">Número de Hornillas</label>
-              <input
-                type="number"
-                min={1}
-                max={20}
-                value={hornillas}
-                onChange={e => setHornillas(Math.max(1, parseInt(e.target.value) || 1))}
-                className="w-full bg-white border border-slate-200 rounded-lg p-2 text-sm font-mono font-bold text-slate-900 focus:ring-2 focus:ring-orange-500/20"
-              />
-            </div>
-            {/* Presión */}
-            <div>
-              <label className="text-xs font-bold text-slate-700 block mb-1">Tipo de Quemadores</label>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { id: 'ALTA', name: '🔥 Alta Presión (Comercial)' },
-                  { id: 'BAJA', name: '💨 Baja Presión (Semi-Industrial)' }
-                ].map(op => (
-                  <button key={op.id} type="button" onClick={() => setPresion(op.id as any)}
-                    className={`py-2 px-3 text-xs font-bold rounded-lg border transition-all ${
-                      presion === op.id ? 'border-orange-500 bg-orange-50 text-orange-950' : 'border-slate-200 hover:bg-slate-50 text-slate-600'
-                    }`}>
-                    {op.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-            {/* Base */}
-            <div>
-              <label className="text-xs font-bold text-slate-700 block mb-1">Estructura Base</label>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { id: 'MESA', name: 'Patas de Mesa' },
-                  { id: 'HORNO', name: 'Horno Integrado' },
-                  { id: 'PAGOPLANCHA', name: 'Plancha y Parrilla' }
-                ].map(op => (
-                  <button key={op.id} type="button" onClick={() => setTipoBase(op.id as any)}
-                    className={`py-2 px-3 text-xs font-bold rounded-lg border transition-all ${
-                      tipoBase === op.id ? 'border-orange-500 bg-orange-50 text-orange-950' : 'border-slate-200 hover:bg-slate-50 text-slate-600'
-                    }`}>
-                    {op.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-            {/* Ancho especial */}
-            <div className="flex items-center gap-2 bg-slate-50 p-3 rounded-lg border border-slate-100">
-              <input type="checkbox" id="ancho_esp" checked={anchoEspecial}
-                onChange={e => setAnchoEspecial(e.target.checked)}
-                className="rounded text-orange-500 focus:ring-orange-500 border-slate-300 w-4 h-4 cursor-pointer"
-              />
-              <label htmlFor="ancho_esp" className="text-xs font-bold text-slate-700 cursor-pointer select-none">
-                📐 Ancho Especial (Más de 1.20 metros / requiere 25% más metal)
-              </label>
-            </div>
-          </div>
-
-          {/* Panel lateral de costeo */}
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
-            <h4 className="text-xs font-extrabold uppercase tracking-wide text-slate-500">Desglose de Costo</h4>
-            <div className="space-y-1">
-              {desgloseCustom.map((item, i) => (
-                <div key={i} className="flex justify-between text-xs text-slate-600">
-                  <span className="truncate pr-2">{item.label}</span>
-                  <span className="font-mono font-semibold shrink-0">S/ {item.costo}</span>
-                </div>
-              ))}
-              <div className="border-t border-slate-200 pt-1 flex justify-between text-xs font-bold text-slate-800">
-                <span>Total Costo</span>
-                <span className="font-mono">S/ {costoTotalCustom.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-xs text-slate-500">
-                <span>Precio Sugerido:</span>
-                <span className="font-mono font-semibold">S/ {precioSugeridoCustom.toFixed(2)}</span>
-              </div>
-            </div>
-            <div className="border-t border-dashed border-slate-200 pt-3">
-              <label className="text-xs font-extrabold text-slate-700 block mb-1">Precio Pactado (S/)</label>
-              <input type="number" min={0}
-                value={precioPactadoCustom || ''}
-                onChange={e => setPrecioPactadoCustom(Number(e.target.value))}
-                className="w-full bg-white border border-slate-200 rounded-lg p-2 text-sm font-mono font-bold text-slate-900 focus:ring-2 focus:ring-orange-500/20"
-              />
-            </div>
-            <div className="space-y-1">
-              <div className="flex justify-between text-[10px] font-bold text-slate-500">
-                <span>Margen:</span>
-                <span className={margenCustom >= 35 ? 'text-green-600' : margenCustom >= 25 ? 'text-amber-500' : 'text-red-500'}>
-                  {margenCustom}%
-                </span>
-              </div>
-              <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                <div
-                  className={`h-full transition-all duration-300 ${margenCustom >= 35 ? 'bg-green-500' : margenCustom >= 25 ? 'bg-amber-400' : 'bg-red-500'}`}
-                  style={{ width: `${Math.max(0, Math.min(100, margenCustom))}%` }}
-                />
-              </div>
-              <p className="text-[10px] text-slate-400 text-center">
-                {margenCustom < 0 ? '🚫 Por debajo del costo' : margenCustom >= 35 ? '✅ Margen excelente' : margenCustom >= 25 ? '⚠️ Margen bajo' : '🚨 Precio muy bajo'}
-              </p>
-            </div>
-            <GradientButton variant="primary" size="md" className="w-full font-bold"
-              onClick={handleAgregarCocinaCustom}
-              disabled={precioPactadoCustom < costoTotalCustom}
-            >
-              Agregar a Proforma
-            </GradientButton>
-          </div>
-        </div>
-      </GradientModal>
-
+        onAgregar={handleAgregarCocinaCustom}
+      />
     </GradientModal>
   );
 }
@@ -1471,6 +1307,7 @@ export default function IndustrialPage() {
   const [proformas, setProformas] = useState<Proforma[]>([]);
   const [products, setProducts] = useState<Producto[]>([]);
   const [clients, setClients] = useState<Cliente[]>([]);
+  const [ordenesPago, setOrdenesPago] = useState<OrdenPago[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [search, setSearch] = useState('');
@@ -1479,6 +1316,13 @@ export default function IndustrialPage() {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [fadingIds, setFadingIds] = useState<Set<string>>(new Set());
+
+  // Estados para el flujo de Orden de Pago
+  const [opWizardOpen, setOpWizardOpen] = useState(false);
+  const [proformaForOP, setProformaForOP] = useState<Proforma | null>(null);
+  const [selectedBanco, setSelectedBanco] = useState<'BCP' | 'Scotiabank' | 'Niubiz' | null>(null);
+  const [generandoOP, setGenerandoOP] = useState(false);
+  const [opGenerada, setOpGenerada] = useState<OrdenPago | null>(null);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -1495,14 +1339,16 @@ export default function IndustrialPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [p, pr, cl] = await Promise.all([
+      const [p, pr, cl, op] = await Promise.all([
         getProformas(),
         getProducts(),
         getClients(),
+        getOrdenesPago(),
       ]);
       setProformas(p);
       setProducts(pr);
       setClients(cl);
+      setOrdenesPago(op);
     } catch {
       addAlert('error', 'Error al cargar datos');
     } finally {
@@ -1711,6 +1557,14 @@ export default function IndustrialPage() {
         onClose={() => setDrawerProforma(null)}
         onUpdateState={handleUpdateState}
         onConvert={handleConvert}
+        ordenesPago={ordenesPago}
+        onGenerarOP={(prof) => {
+          setDrawerProforma(null);
+          setProformaForOP(prof);
+          setSelectedBanco(null);
+          setOpGenerada(null);
+          setOpWizardOpen(true);
+        }}
       />
 
       {/* Wizard */}
@@ -1727,6 +1581,247 @@ export default function IndustrialPage() {
         representanteId={usuario?.id || 'u2'}
         representanteNombre={usuario?.nombre || 'Representante'}
       />
+
+      {/* Pago / Generar Orden de Pago Screen */}
+      {opWizardOpen && proformaForOP && (
+        <div className="fixed inset-0 z-50 bg-slate-100 flex flex-col overflow-y-auto animate-fade-in-up">
+          {/* Header */}
+          <header className="bg-white px-8 py-4 flex justify-between items-center shadow-sm border-b border-slate-200/80">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-orange-500 rounded-lg flex items-center justify-center text-white font-extrabold text-lg shadow-sm">
+                F
+              </div>
+              <span className="text-slate-900 font-extrabold tracking-tight">FADICC S.A.</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-semibold text-slate-600 hidden sm:inline-block">
+                {usuario?.nombre || 'JEANPIER JOSE SALAZAR AGUILAR'}
+              </span>
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-400 to-amber-300 flex items-center justify-center text-white font-bold text-sm">
+                {usuario ? usuario.nombre.split(' ').slice(0, 2).map((n: string) => n[0]?.toUpperCase() ?? '').join('') : 'JS'}
+              </div>
+            </div>
+          </header>
+
+          {/* Container */}
+          <main className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-8 flex flex-col justify-center">
+            <div className="bg-white rounded-2xl shadow-xl border border-slate-200/80 overflow-hidden transition-all duration-300">
+              
+              {!opGenerada ? (
+                <>
+                  {/* Pasos */}
+                  <div className="flex px-6 sm:px-8 py-6 border-b border-slate-100 gap-6 sm:gap-8 items-center bg-slate-50/50">
+                    <div className="flex items-center gap-3 opacity-60">
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm bg-emerald-500 text-white shadow-sm">
+                        ✓
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-slate-800 leading-none mb-1">Detalles</h4>
+                        <p className="text-[10px] text-slate-500">Descripción del Trámite</p>
+                      </div>
+                    </div>
+                    <div className="text-slate-300 text-xl font-light">›</div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center font-extrabold text-sm bg-orange-700 text-white shadow-sm shadow-orange-700/30">
+                        2
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-slate-800 leading-none mb-1">Pagos</h4>
+                        <p className="text-[10px] text-slate-500">Generar Orden Pago</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Contenido */}
+                  <div className="p-6 sm:p-8">
+                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-5">Seleccione el Banco:</h3>
+
+                    {/* Bancos Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                      {/* BCP */}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedBanco('BCP')}
+                        className={`border-2 rounded-xl p-5 text-left transition-all duration-200 flex items-center justify-between cursor-pointer ${
+                          selectedBanco === 'BCP'
+                            ? 'border-orange-500 bg-orange-50/10 shadow-md shadow-orange-500/5'
+                            : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                            selectedBanco === 'BCP' ? 'border-orange-500 bg-orange-500' : 'border-slate-300'
+                          }`}>
+                            {selectedBanco === 'BCP' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                          </div>
+                          <span className="font-extrabold text-blue-900 text-lg tracking-tight">BCP</span>
+                        </div>
+                        <span className="text-xs font-bold text-slate-500">S/ {proformaForOP.total.toFixed(2)}</span>
+                      </button>
+
+                      {/* Scotiabank */}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedBanco('Scotiabank')}
+                        className={`border-2 rounded-xl p-5 text-left transition-all duration-200 flex items-center justify-between cursor-pointer ${
+                          selectedBanco === 'Scotiabank'
+                            ? 'border-orange-500 bg-orange-50/10 shadow-md shadow-orange-500/5'
+                            : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                            selectedBanco === 'Scotiabank' ? 'border-orange-500 bg-orange-500' : 'border-slate-300'
+                          }`}>
+                            {selectedBanco === 'Scotiabank' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                          </div>
+                          <span className="font-extrabold text-red-600 text-lg tracking-tight">Scotiabank</span>
+                        </div>
+                        <span className="text-xs font-bold text-slate-500">S/ {proformaForOP.total.toFixed(2)}</span>
+                      </button>
+
+                      {/* Niubiz */}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedBanco('Niubiz')}
+                        className={`border-2 rounded-xl p-5 text-left transition-all duration-200 flex items-center justify-between cursor-pointer ${
+                          selectedBanco === 'Niubiz'
+                            ? 'border-orange-500 bg-orange-50/10 shadow-md shadow-orange-500/5'
+                            : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                            selectedBanco === 'Niubiz' ? 'border-orange-500 bg-orange-500' : 'border-slate-300'
+                          }`}>
+                            {selectedBanco === 'Niubiz' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                          </div>
+                          <span className="font-extrabold text-cyan-500 text-lg tracking-tight">Niubiz</span>
+                        </div>
+                        <span className="text-xs font-bold text-slate-500">S/ {proformaForOP.total.toFixed(2)}</span>
+                      </button>
+                    </div>
+
+                    {/* Resumen */}
+                    <div className="bg-slate-50 rounded-xl p-5 border border-slate-200/50 mb-6 space-y-3">
+                      <div className="flex justify-between text-xs text-slate-600">
+                        <span>Concepto:</span>
+                        <span className="font-semibold text-slate-800">Pago de Proforma {proformaForOP.codigo_proforma}</span>
+                      </div>
+                      <div className="flex justify-between text-xs text-slate-600">
+                        <span>Cliente:</span>
+                        <span className="font-semibold text-slate-800">{proformaForOP.cliente_nombre || 'Cliente'}</span>
+                      </div>
+                      <div className="border-t border-slate-200 pt-3 flex justify-between items-center text-slate-800">
+                        <span className="font-bold text-sm">Monto a Pagar:</span>
+                        <span className="text-xl font-extrabold font-mono text-orange-600">S/ {proformaForOP.total.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</span>
+                      </div>
+                    </div>
+
+                    {/* Acciones */}
+                    <div className="flex gap-3 justify-start">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOpWizardOpen(false);
+                          setDrawerProforma(proformaForOP);
+                        }}
+                        className="px-5 py-2.5 border border-slate-200 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-50 transition-colors cursor-pointer"
+                      >
+                        Anterior
+                      </button>
+                      <button
+                        type="button"
+                        disabled={!selectedBanco || generandoOP}
+                        onClick={async () => {
+                          if (!selectedBanco) return;
+                          setGenerandoOP(true);
+                          try {
+                            const result = await createOrdenPago({
+                              proforma_id: proformaForOP.id,
+                              proforma_codigo: proformaForOP.codigo_proforma,
+                              cliente_id: proformaForOP.cliente_id,
+                              cliente_nombre: proformaForOP.cliente_nombre || 'Cliente',
+                              monto: proformaForOP.total,
+                              banco: selectedBanco,
+                            });
+                            setOpGenerada(result);
+                            loadData();
+                            addAlert('success', 'Orden de Pago generada exitosamente');
+                          } catch (err) {
+                            addAlert('error', 'Error al generar Orden de Pago');
+                          } finally {
+                            setGenerandoOP(false);
+                          }
+                        }}
+                        className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-xl font-bold text-sm transition-all shadow-md shadow-orange-500/10 cursor-pointer flex items-center gap-2"
+                      >
+                        {generandoOP ? 'Generando...' : 'Generar orden de pago'}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                /* Pantalla de Éxito */
+                <div className="p-8 text-center max-w-lg mx-auto py-12 flex flex-col items-center">
+                  <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center text-3xl font-bold shadow-sm shadow-emerald-500/10 mb-5">
+                    ✓
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-2">Orden de Pago Generada</h3>
+                  <p className="text-sm text-slate-500 mb-6">Su orden de pago ha sido generada exitosamente.</p>
+                  
+                  <div className="bg-slate-50 border border-slate-200/50 rounded-xl px-6 py-4 font-mono font-black text-2xl text-orange-600 tracking-wider mb-6 shadow-inner">
+                    {opGenerada.codigo_op}
+                  </div>
+
+                  <div className="text-slate-600 text-sm mb-8 bg-slate-50/50 p-4 rounded-xl border border-slate-200/50 w-full space-y-1 text-left">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Banco seleccionado:</span>
+                      <strong className="text-slate-800">{opGenerada.banco}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Monto:</span>
+                      <strong className="text-slate-800">S/ {opGenerada.monto.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</strong>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 justify-center w-full">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOpWizardOpen(false);
+                        setProformaForOP(null);
+                        setOpGenerada(null);
+                      }}
+                      className="px-5 py-2.5 border border-slate-200 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-50 transition-colors cursor-pointer w-full"
+                    >
+                      Volver al Inicio
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => generarPdfOrdenPago({
+                        codigo_op: opGenerada.codigo_op,
+                        proforma_codigo: opGenerada.proforma_codigo,
+                        cliente_nombre: opGenerada.cliente_nombre,
+                        monto: opGenerada.monto,
+                        banco: opGenerada.banco,
+                        fecha_creacion: opGenerada.fecha_creacion,
+                      })}
+                      className="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-sm transition-all shadow-md shadow-orange-500/10 cursor-pointer w-full flex items-center justify-center gap-2"
+                    >
+                      📄 Descargar Comprobante
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </main>
+
+          <footer className="py-6 text-center text-xs text-slate-400">
+            &copy; {new Date().getFullYear()} ATIC <a href="#" className="text-orange-600 font-semibold ml-2 hover:underline">Licencia</a>
+          </footer>
+        </div>
+      )}
     </div>
   );
 }
