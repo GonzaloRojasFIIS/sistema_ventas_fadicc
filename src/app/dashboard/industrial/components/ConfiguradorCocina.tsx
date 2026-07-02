@@ -32,8 +32,8 @@ const MATERIALES = [
     id: '304' as const, 
     nombre: 'Acero Inox 304', 
     subtitulo: 'Premium · Máxima resistencia',
-    costo: 2800, 
-    sugerido: 4200,
+    costo: 700, 
+    sugerido: 1050,
     color: '#e8f5e9',
     borderColor: '#4caf50',
     icon: Shield,
@@ -43,8 +43,8 @@ const MATERIALES = [
     id: '430' as const, 
     nombre: 'Acero Inox 430', 
     subtitulo: 'Estándar · Buen rendimiento',
-    costo: 1800, 
-    sugerido: 2800,
+    costo: 450, 
+    sugerido: 680,
     color: '#e3f2fd',
     borderColor: '#2196f3',
     icon: Layers,
@@ -54,8 +54,8 @@ const MATERIALES = [
     id: 'FIERRO' as const, 
     nombre: 'Fierro Galvanizado', 
     subtitulo: 'Económico · Uso básico',
-    costo: 900, 
-    sugerido: 1400,
+    costo: 250, 
+    sugerido: 380,
     color: '#fff3e0',
     borderColor: '#ff9800',
     icon: Factory,
@@ -68,8 +68,8 @@ const PRESIONES = [
     id: 'ALTA' as const, 
     nombre: 'Alta Presión', 
     subtitulo: 'Comercial · 28-30 mbar',
-    costoPorHornilla: 180, 
-    sugeridoPorHornilla: 270,
+    costoPorHornilla: 25, 
+    sugeridoPorHornilla: 40,
     icon: Flame,
     color: '#ff5722',
     desc: 'Ideal para restaurantes y cocinas de alto rendimiento. Mayor potencia calórica.'
@@ -78,8 +78,8 @@ const PRESIONES = [
     id: 'BAJA' as const, 
     nombre: 'Baja Presión', 
     subtitulo: 'Semi-Industrial · 19-21 mbar',
-    costoPorHornilla: 90, 
-    sugeridoPorHornilla: 140,
+    costoPorHornilla: 15, 
+    sugeridoPorHornilla: 25,
     icon: Zap,
     color: '#03a9f4',
     desc: 'Para cocinas medianas y uso continuo moderado. Mayor eficiencia energética.'
@@ -90,8 +90,8 @@ const BASES = [
   { 
     id: 'MESA' as const, 
     nombre: 'Patas de Mesa', 
-    costo: 350, 
-    sugerido: 550,
+    costo: 80, 
+    sugerido: 120,
     icon: Ruler,
     altura: '85 cm',
     peso: '12 kg',
@@ -100,8 +100,8 @@ const BASES = [
   { 
     id: 'HORNO' as const, 
     nombre: 'Horno Integrado', 
-    costo: 1800, 
-    sugerido: 2800,
+    costo: 600, 
+    sugerido: 900,
     icon: Package,
     altura: '110 cm',
     peso: '45 kg',
@@ -110,8 +110,8 @@ const BASES = [
   { 
     id: 'PAGOPLANCHA' as const, 
     nombre: 'Plancha + Parrilla', 
-    costo: 900, 
-    sugerido: 1400,
+    costo: 300, 
+    sugerido: 450,
     icon: Layers,
     altura: '95 cm',
     peso: '28 kg',
@@ -148,8 +148,8 @@ export const ConfiguradorCocina: React.FC<ConfiguradorCocinaProps> = ({
     const costoMat = matData.costo;
     const sugeridoMat = matData.sugerido;
     
-    const costoHorn = hornillas * 280;
-    const sugeridoHorn = hornillas * 420;
+    const costoHorn = hornillas * 100;
+    const sugeridoHorn = hornillas * 150;
     
     const costoPres = hornillas * presData.costoPorHornilla;
     const sugeridoPres = hornillas * presData.sugeridoPorHornilla;
@@ -321,6 +321,14 @@ export const ConfiguradorCocina: React.FC<ConfiguradorCocinaProps> = ({
         {/* Header */}
         <div className="bg-gradient-to-r from-orange-600 to-orange-500 px-6 py-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
+            <button 
+              type="button" 
+              onClick={onClose} 
+              className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-xl flex items-center justify-center transition-colors"
+              title="Volver"
+            >
+              <ChevronLeft className="w-6 h-6 text-white" />
+            </button>
             <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
               <Factory className="w-5 h-5 text-white" />
             </div>
@@ -372,7 +380,7 @@ export const ConfiguradorCocina: React.FC<ConfiguradorCocinaProps> = ({
         </div>
 
         {/* Contenido Principal */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 min-h-0 overflow-y-auto p-6">
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
             
             {/* Panel Izquierdo: Configuración */}
@@ -751,19 +759,25 @@ export const ConfiguradorCocina: React.FC<ConfiguradorCocinaProps> = ({
         {/* Footer: Navegación */}
         <div className="border-t border-slate-200 px-6 py-4 bg-white shrink-0">
           <div className="flex items-center justify-between">
-            <button
-              type="button"
-              onClick={prevStep}
-              disabled={step === 1}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all ${
-                step === 1 
-                  ? 'text-slate-300 cursor-not-allowed' 
-                  : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              <ChevronLeft className="w-4 h-4" />
-              Anterior
-            </button>
+            {step === 1 ? (
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm text-slate-600 hover:bg-slate-100 transition-all"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Volver
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={prevStep}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm text-slate-600 hover:bg-slate-100 transition-all"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Anterior
+              </button>
+            )}
 
             <div className="flex items-center gap-3">
               {step === 3 && (
