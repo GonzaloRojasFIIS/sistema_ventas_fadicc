@@ -103,22 +103,24 @@ export async function createOrdenPago(orden: Omit<OrdenPago, 'id' | 'codigo_op' 
         .select()
         .single();
 
-      if (!error && data) {
-        return {
-          ...newOp,
-          id: data.id,
-          codigo_op: data.codigo_op,
-          fecha_creacion: data.fecha_creacion,
-        };
-      } else {
-        console.error('[db] Error insertando en Supabase ordenes_pago, usando local:', error);
+      if (error || !data) {
+        console.error('[db] Error insertando en Supabase orden_pagos:', error);
+        throw new Error('No se pudo guardar la orden de pago en la base de datos');
       }
+
+      return {
+        ...newOp,
+        id: data.id,
+        codigo_op: data.codigo_op,
+        fecha_creacion: data.fecha_creacion,
+      };
     } catch (e: any) {
-      console.error('[db] Excepción al guardar en Supabase:', e.message);
+      console.error('[db] Excepción al guardar orden de pago en Supabase:', e.message);
+      throw e;
     }
   }
 
-  // Guardar en local storage si falla o no está configurado
+  // Guardar en local storage solo si Supabase no está configurado
   const localList = getLocalData<OrdenPago[]>('fadicc_ordenes_pago', []);
   localList.unshift(newOp);
   setLocalData('fadicc_ordenes_pago', localList);

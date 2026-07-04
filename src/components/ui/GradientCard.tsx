@@ -38,7 +38,7 @@ export default function GradientCard({
       {accentTop && (
         <div className={`h-1 w-full ${accentColor}`} />
       )}
-      <div className="relative z-10">
+      <div className="relative z-10 flex flex-col flex-1 min-h-0">
         {children}
       </div>
     </div>
