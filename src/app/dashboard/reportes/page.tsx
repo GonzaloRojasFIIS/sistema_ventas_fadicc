@@ -121,6 +121,11 @@ function getInitialDateTo() {
   return new Date().toISOString().split('T')[0];
 }
 
+function parseLocalDateBound(dateStr: string, endOfDay: boolean) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return endOfDay ? new Date(y, m - 1, d, 23, 59, 59, 999) : new Date(y, m - 1, d, 0, 0, 0, 0);
+}
+
 /* ------------------------------------------------------------------ */
 /*  Página Reportes                                                    */
 /* ------------------------------------------------------------------ */
@@ -177,10 +182,8 @@ export default function ReportesPage() {
 
   /* ---------- Datos derivados: ventas por período ---------- */
   const ventasPorPeriodo = useMemo(() => {
-    const from = new Date(dateFrom);
-    from.setHours(0, 0, 0, 0);
-    const to = new Date(dateTo);
-    to.setHours(23, 59, 59, 999);
+    const from = parseLocalDateBound(dateFrom, false);
+    const to = parseLocalDateBound(dateTo, true);
 
     const map = new Map<string, { comercial: number; industrial: number }>();
 

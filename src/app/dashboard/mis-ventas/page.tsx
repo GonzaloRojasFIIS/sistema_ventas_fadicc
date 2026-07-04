@@ -32,6 +32,11 @@ function formatDateTime(iso: string) {
   return `${d.toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })} ${d.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false })}`;
 }
 
+function parseLocalDateBound(dateStr: string, endOfDay: boolean) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return endOfDay ? new Date(y, m - 1, d, 23, 59, 59, 999) : new Date(y, m - 1, d, 0, 0, 0, 0);
+}
+
 function getInitialDateFrom() {
   const d = new Date();
   d.setDate(d.getDate() - 30);
@@ -93,8 +98,8 @@ export default function MisVentasPage() {
 
   /* ---------- Filtros ---------- */
   const ventasFiltradas = useMemo(() => {
-    const from = new Date(dateFrom); from.setHours(0, 0, 0, 0);
-    const to = new Date(dateTo); to.setHours(23, 59, 59, 999);
+    const from = parseLocalDateBound(dateFrom, false);
+    const to = parseLocalDateBound(dateTo, true);
     const q = busqueda.toLowerCase().trim();
 
     return ventas.filter(v => {
@@ -108,8 +113,8 @@ export default function MisVentasPage() {
   }, [ventas, dateFrom, dateTo, busqueda]);
 
   const proformasFiltradas = useMemo(() => {
-    const from = new Date(dateFrom); from.setHours(0, 0, 0, 0);
-    const to = new Date(dateTo); to.setHours(23, 59, 59, 999);
+    const from = parseLocalDateBound(dateFrom, false);
+    const to = parseLocalDateBound(dateTo, true);
     const q = busqueda.toLowerCase().trim();
 
     return proformas.filter(p => {

@@ -208,7 +208,7 @@ function KanbanCard({
 
     if (estado === 'APROBADA') {
       return (
-        <div className="flex flex-wrap gap-2 pt-3 border-t border-slate-100">
+        <div className="relative flex flex-wrap gap-2 pt-3 border-t border-slate-100">
           <button
             onClick={(e) => { e.stopPropagation(); onSelect(proforma); }}
             className="text-xs text-blue-600 hover:text-blue-700 font-medium underline decoration-blue-300 underline-offset-2"
