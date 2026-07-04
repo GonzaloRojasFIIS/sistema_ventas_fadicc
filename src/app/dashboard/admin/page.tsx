@@ -8,6 +8,7 @@ import GlassInput from '@/components/ui/GlassInput';
 import StatusBadge from '@/components/ui/StatusBadge';
 import GradientModal from '@/components/ui/GradientModal';
 import AnimatedCounter from '@/components/ui/AnimatedCounter';
+import { getUsuarios, createUsuario, updateUsuario } from '@/services/usuarioService';
 
 /* ── Tipos ── */
 interface UsuarioAdmin {
@@ -51,6 +52,12 @@ export default function AdminPage() {
   const [usuarios, setUsuarios] = useState<UsuarioAdmin[]>(USUARIOS_INICIALES);
   const [busqueda, setBusqueda] = useState('');
 
+  useEffect(() => {
+    getUsuarios().then((data) => {
+      if (data && data.length > 0) setUsuarios(data as UsuarioAdmin[]);
+    });
+  }, []);
+
   const [modalEditarOpen, setModalEditarOpen] = useState(false);
   const [usuarioEditar, setUsuarioEditar] = useState<UsuarioAdmin | null>(null);
   const [editNombre, setEditNombre] = useState('');
@@ -89,20 +96,19 @@ export default function AdminPage() {
     setModalEditarOpen(true);
   }
 
-  function guardarEdicion(e: React.FormEvent) {
+  async function guardarEdicion(e: React.FormEvent) {
     e.preventDefault();
     if (!usuarioEditar) return;
+    const cambios = { nombre: editNombre.trim(), rol: editRol, activo: editActivo };
+    const ok = await updateUsuario(usuarioEditar.id, cambios);
+    if (!ok) return;
     setUsuarios((prev) =>
-      prev.map((u) =>
-        u.id === usuarioEditar.id
-          ? { ...u, nombre: editNombre.trim(), rol: editRol, activo: editActivo }
-          : u
-      )
+      prev.map((u) => (u.id === usuarioEditar.id ? { ...u, ...cambios } : u))
     );
     setModalEditarOpen(false);
   }
 
-  function handleCrear(e: React.FormEvent) {
+  async function handleCrear(e: React.FormEvent) {
     e.preventDefault();
     const nombre = nuevoNombre.trim();
     const email = nuevoEmail.trim();
@@ -115,22 +121,25 @@ export default function AdminPage() {
       setErrorCrear('Ya existe un usuario con ese email.');
       return;
     }
-    const nuevo: UsuarioAdmin = {
-      id: `u${Date.now()}`,
-      nombre,
-      email,
-      rol: nuevoRol,
-      activo: true,
-    };
-    setUsuarios((prev) => [...prev, nuevo]);
-    setModalCrearOpen(false);
-    setNuevoNombre('');
-    setNuevoEmail('');
-    setNuevoRol('VENDEDOR');
-    setErrorCrear('');
+    try {
+      const nuevo = await createUsuario({ nombre, email, rol: nuevoRol, activo: true });
+      setUsuarios((prev) => [...prev, nuevo as UsuarioAdmin]);
+      setModalCrearOpen(false);
+      setNuevoNombre('');
+      setNuevoEmail('');
+      setNuevoRol('VENDEDOR');
+      setErrorCrear('');
+    } catch (err) {
+      console.error('Error creando usuario:', err);
+      setErrorCrear('No se pudo guardar el usuario. Intenta nuevamente.');
+    }
   }
 
-  function toggleActivo(id: string) {
+  async function toggleActivo(id: string) {
+    const usuario = usuarios.find((u) => u.id === id);
+    if (!usuario) return;
+    const ok = await updateUsuario(id, { activo: !usuario.activo });
+    if (!ok) return;
     setUsuarios((prev) =>
       prev.map((u) => (u.id === id ? { ...u, activo: !u.activo } : u))
     );
